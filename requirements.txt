@@ -1,0 +1,17 @@
+# Análisis estadístico
+numpy>=1.26,<2.5
+pandas>=2.2
+scipy>=1.13
+statsmodels>=0.14
+
+# Visualización
+matplotlib>=3.9
+
+# Estadística bayesiana
+pymc>=5.15
+arviz>=0.23,<1
+
+# Integración con Quarto y notebook del taller
+jupyter>=1.1
+nbclient
+ipykernel

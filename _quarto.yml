@@ -1,0 +1,25 @@
+project:
+  title: "Seminario de inferencia bayesiana"
+  type: "website"
+  output-dir: _site
+  render:
+    - index.qmd
+
+format:
+  revealjs:
+    theme:
+      - simple
+      - custom.scss
+    logo: img/favicon.png
+    transition: none
+    slide-number: true
+    incremental: false
+
+execute:
+  freeze: auto
+  echo: false
+  warning: false
+  message: false
+
+website:
+  favicon: "img/favicon.png"
