@@ -1,0 +1,739 @@
+---
+title: "Decidir sin certeza"
+subtitle: "Una introducción a la inferencia bayesiana"
+author: "Leonardo Hansa"
+date: today
+date-format: "D/M/YYYY"
+lang: es
+execute:
+  echo: false
+  eval: true
+  warning: false
+  message: false
+format:
+  revealjs:
+    theme:
+      - simple
+      - custom.scss
+    logo: img/favicon.png
+    transition: none
+    slide-number: true
+    incremental: false
+---
+
+```{python}
+#| label: setup
+#| include: false
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from scipy import stats
+import statsmodels.api as sm
+import pymc as pm
+import arviz as az
+
+from src.estilo import ACENTO, aplicar_estilo
+
+aplicar_estilo()
+
+SEMILLA = 42
+```
+
+# Obama y las decisiones imposibles
+
+## Un presidente solo decide sobre lo que nadie ha sabido resolver
+
+## Los problemas con solución clara no llegan a su mesa
+
+## Así que ninguna de sus decisiones es, con certeza, la correcta
+
+## Y aun así hay que decidir
+
+Con la mejor información disponible. Sin esperar a la certeza, que no va a llegar.
+
+## De eso va la estadística
+
+Una forma disciplinada de razonar y decidir con información incompleta.
+
+No elimina la incertidumbre. La ordena.
+
+# ¿Qué es la inferencia estadística?
+
+## Partir de lo observado para decir algo de lo no observado
+
+## Es un salto de fe: nunca tienes todos los datos
+
+La pregunta es cuánto puedes extrapolar de la parte al todo, y con cuánta incertidumbre.
+
+## Hay dos formas de dar ese salto
+
+::: {.incremental}
+
+- **Frecuentista**: probabilidad = frecuencia a largo plazo. El parámetro está fijo; lo aleatorio son los datos.
+- **Bayesiano**: probabilidad = grado de creencia. Los datos están fijos; lo incierto es el parámetro.
+
+:::
+
+## Todo el enfoque bayesiano se apoya en una sola regla
+
+$$
+P(\theta \mid \text{datos}) = \frac{P(\text{datos} \mid \theta) \cdot P(\theta)}{P(\text{datos})}
+$$
+
+## Cada término tiene nombre
+
+| Término | Nombre |
+|---|---|
+| $P(\theta \mid \text{datos})$ | posteriori: lo que buscas |
+| $P(\text{datos} \mid \theta)$ | verosimilitud: tu modelo |
+| $P(\theta)$ | priori: lo que creías antes |
+| $P(\text{datos})$ | constante normalizadora |
+
+## Ninguno de los dos paradigmas es mejor
+
+Vamos a recorrer los dos caminos con el mismo problema.
+
+# Problema 1: una moneda
+
+## Lanzo una moneda 100 veces y salen 60 caras
+
+## ¿Crees que la moneda favorece la cara?
+
+Es decir: ¿es $\theta > 0{,}5$?
+
+## Empecemos por lo intuitivo: simular
+
+Simulo 10.000 veces el experimento **suponiendo que la moneda es justa**.
+
+```{python}
+#| label: fig-sim-hist
+
+np.random.seed(SEMILLA)
+
+n_lanzamientos = 100
+caras_obs = 60
+
+caras = np.random.binomial(n=n_lanzamientos, p=0.5, size=10_000)
+
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.hist(caras, bins=range(30, 71), edgecolor="white", color="#666666", alpha=0.85)
+ax.axvline(50, color="black", linestyle="--", linewidth=1.2, label="Valor esperado (50)")
+ax.set_xlabel("Número de caras")
+ax.set_ylabel("Frecuencia")
+ax.legend()
+plt.show()
+```
+
+## Cuento qué proporción de esas simulaciones da 60 caras o más
+
+```{python}
+#| label: fig-pvalor-hist
+
+p_valor_sim = np.mean(caras >= caras_obs)
+
+fig, ax = plt.subplots(figsize=(9, 4))
+_, bordes, barras = ax.hist(
+    caras, bins=range(30, 71), edgecolor="white", color="#BBBBBB", alpha=0.9
+)
+for barra, borde in zip(barras, bordes[:-1]):
+    if borde >= caras_obs:
+        barra.set_facecolor("#333333")
+        barra.set_edgecolor("white")
+        barra.set_hatch("///")
+
+ax.axvline(caras_obs, color=ACENTO, linewidth=2)
+ax.set_xlabel("Número de caras")
+ax.set_ylabel("Frecuencia")
+ax.set_title(f"p-valor simulado ≈ {p_valor_sim:.3f}")
+plt.show()
+```
+
+## Eso es un contraste de hipótesis
+
+$$
+H_0: \theta = 0{,}5 \qquad \text{frente a} \qquad H_1: \theta > 0{,}5
+$$
+
+```{python}
+#| label: tbl-contraste
+
+p_hat = caras_obs / n_lanzamientos
+z = (p_hat - 0.5) / np.sqrt(0.5 * 0.5 / n_lanzamientos)
+p_z = stats.norm.sf(z)
+p_exacto = stats.binomtest(caras_obs, n=n_lanzamientos, p=0.5, alternative="greater").pvalue
+
+pd.DataFrame(
+    {
+        "Método": ["Simulación", "Aproximación normal", "Binomial exacto"],
+        "p-valor": [f"{p_valor_sim:.4f}", f"{p_z:.4f}", f"{p_exacto:.4f}"],
+    }
+).style.hide(axis="index")
+```
+
+## ¿Te has dado cuenta de lo que acabo de hacer?
+
+## He dado la vuelta al problema
+
+::: {.incremental}
+
+- Tú me preguntas por **la moneda**.
+- Yo he calculado la probabilidad de **los datos**, suponiendo lo contrario de lo que quiero demostrar.
+- Y el dato ya ha ocurrido.
+
+:::
+
+## Por eso todo el mundo se lía con el p-valor
+
+- "Si el p-valor es bajo, ¿rechazaba o aceptaba?"
+- "¿Cuál era la hipótesis nula?"
+
+## Vamos a no dar la vuelta al problema
+
+# El mismo problema, en bayesiano
+
+## Necesitas tres cosas: datos, priori y modelo
+
+::: {.incremental}
+
+- **Datos**: 60 caras en 100 lanzamientos.
+- **Priori**: qué valores te parecen razonables para $\theta$ antes de mirar.
+- **Verosimilitud**: cómo se generan los datos dado $\theta$. Aquí, una binomial.
+
+:::
+
+## En pymc eso son tres líneas
+
+```{python}
+#| label: modelo-moneda
+#| echo: true
+
+with pm.Model() as modelo_moneda:
+    theta = pm.Uniform("theta", lower=0, upper=1)          # priori
+    y = pm.Binomial("y", n=100, p=theta, observed=60)      # verosimilitud + datos
+
+    idata_moneda = pm.sample(
+        draws=2000, tune=1000, random_seed=SEMILLA, progressbar=False
+    )
+```
+
+## El resultado no es un número: es una distribución
+
+```{python}
+#| label: fig-posterior-moneda
+
+theta_post = idata_moneda.posterior["theta"].values.flatten()
+
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.hist(theta_post, bins=50, density=True, edgecolor="white", color="#666666", alpha=0.85)
+ax.axvline(0.5, color="black", linestyle="--", linewidth=1.5, label="θ = 0,5 (justa)")
+ax.axvline(0.6, color=ACENTO, linewidth=2, label="θ observado = 0,60")
+ax.set_xlabel("θ (probabilidad de cara)")
+ax.set_ylabel("Densidad")
+ax.legend()
+plt.show()
+```
+
+## Y ahora la pregunta original se responde contando
+
+```{python}
+#| label: prob-sesgo
+#| echo: true
+
+float(np.mean(theta_post > 0.5))
+```
+
+## Cuidado con lo que significa ese número
+
+Es la probabilidad de que $\theta > 0{,}5$ **dada esta priori y este modelo**.
+
+No es "la probabilidad de que la moneda esté trucada" en abstracto.
+
+## Intervalo de credibilidad: lo que el de confianza aparenta ser
+
+```{python}
+#| label: fig-hdi-moneda
+
+hdi = az.hdi(theta_post, hdi_prob=0.95)
+
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.hist(theta_post, bins=50, density=True, edgecolor="white", color="#BBBBBB", alpha=0.9)
+ax.axvspan(hdi[0], hdi[1], color=ACENTO, alpha=0.18)
+ax.axvline(0.5, color="black", linestyle="--", linewidth=1.5, label="θ = 0,5")
+ax.set_xlabel("θ (probabilidad de cara)")
+ax.set_ylabel("Densidad")
+ax.set_title(f"IC 95%: [{hdi[0]:.3f}, {hdi[1]:.3f}]")
+ax.legend()
+plt.show()
+```
+
+## Una priori plana no es "no elegir"
+
+Una uniforme en $\theta$ deja de ser plana si miras $\log\frac{\theta}{1-\theta}$.
+
+Elegir una priori plana también es elegir.
+
+## Resumen del bloque
+
+::: {.incremental}
+
+- El frecuentista calcula la probabilidad de **los datos**.
+- El bayesiano calcula la probabilidad del **parámetro**.
+- El segundo responde a la pregunta que yo hice.
+- El precio: mucho más cómputo.
+
+:::
+
+# Problema 2: radón en Minnesota
+
+## 919 mediciones de radón en viviendas de 85 condados
+
+Ejemplo clásico de Gelman. Buscamos asociación y predicción, no causalidad.
+
+```{python}
+#| label: carga-radon
+
+df = pd.read_csv("data/radon.csv")
+floor = df["floor"].values
+log_radon = df["log_radon"].values
+county_idx = df["county_code"].values
+n_condados = df["county_code"].nunique()
+```
+
+## Trabajamos con el logaritmo del radón
+
+```{python}
+#| label: fig-hist-radon
+
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.hist(df["log_radon"], bins=40, edgecolor="white", color="#666666", alpha=0.85)
+ax.axvline(
+    df["log_radon"].mean(), color=ACENTO, linestyle="--", linewidth=1.5,
+    label=f"Media = {df['log_radon'].mean():.2f}",
+)
+ax.set_xlabel("log(radón)")
+ax.set_ylabel("Frecuencia")
+ax.legend()
+plt.show()
+```
+
+## El sótano da niveles más altos que la planta baja
+
+```{python}
+#| label: fig-boxplot-floor
+
+fig, ax = plt.subplots(figsize=(7, 4))
+bp = ax.boxplot(
+    [df.loc[df["floor"] == 0, "log_radon"], df.loc[df["floor"] == 1, "log_radon"]],
+    tick_labels=["Sótano", "Planta baja"],
+    patch_artist=True,
+    boxprops=dict(facecolor="white", edgecolor="black", linewidth=1),
+    medianprops=dict(color=ACENTO, linewidth=2),
+    whiskerprops=dict(color="black", linestyle="--"),
+    capprops=dict(color="black"),
+    flierprops=dict(marker="o", markerfacecolor="white", markeredgecolor="black", markersize=4),
+)
+bp["boxes"][1].set_hatch("///")
+ax.set_ylabel("log(radón)")
+plt.show()
+```
+
+## Pero hay condados con 100 mediciones y condados con una
+
+```{python}
+#| label: fig-obs-condado
+
+conteo = df["county"].value_counts()
+
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.hist(conteo.values, bins=30, edgecolor="white", color="#666666", alpha=0.85)
+ax.set_xlabel("Mediciones por condado")
+ax.set_ylabel("Número de condados")
+ax.set_title(
+    f"Mediana: {int(conteo.median())} mediciones · "
+    f"{(conteo <= 3).sum()} condados con 3 o menos"
+)
+plt.show()
+```
+
+## Ese desequilibrio va a condicionar todo el análisis
+
+# Modelo 1: todos los condados juntos
+
+## La regresión de siempre
+
+$$
+\log(\text{radón}_i) = \beta_0 + \beta_1 \cdot \text{planta}_i + \varepsilon_i
+$$
+
+```{python}
+#| label: tbl-ols
+
+X = sm.add_constant(df[["floor"]])
+ols = sm.OLS(df["log_radon"], X).fit()
+
+pd.DataFrame(
+    {
+        "Coeficiente": ols.params.round(3),
+        "Error estándar": ols.bse.round(3),
+        "IC 2,5%": ols.conf_int()[0].round(3),
+        "IC 97,5%": ols.conf_int()[1].round(3),
+    }
+)
+```
+
+## El mismo modelo, en bayesiano
+
+$$
+y_i \sim \mathcal{N}(\alpha + \beta_1 x_i, \; \sigma^2)
+$$
+
+```{python}
+#| label: modelo-agrupado
+#| echo: true
+
+with pm.Model() as modelo_agrupado:
+    alpha = pm.Normal("alpha", mu=0, sigma=2)
+    beta1 = pm.Normal("beta1", mu=0, sigma=1)
+    sigma = pm.Exponential("sigma", 1)
+
+    y_obs = pm.Normal("y_obs", mu=alpha + beta1 * floor, sigma=sigma, observed=log_radon)
+
+    idata = pm.sample(draws=1000, tune=1000, random_seed=SEMILLA, progressbar=False)
+```
+
+## ¿De dónde salen esos números de las prioris?
+
+De la escala de la variable, no del deseo de que sean amplias.
+
+::: {.incremental}
+
+- log(radón) tiene desviación típica **0,82** y va de −2,3 a 3,9.
+- $\alpha \sim \mathcal{N}(0, 2^2)$: cubre de 0,02 a 55 pCi/L. De sobra.
+- $\beta_1 \sim \mathcal{N}(0, 1^2)$: sin dirección, hasta un factor 7.
+- Una $\mathcal{N}(0, 10^2)$ aquí son doce desviaciones típicas. Eso no es prudencia.
+
+:::
+
+## Y esto se comprueba, no se afirma
+
+```{python}
+#| label: fig-prior-predictive
+
+def simular_desde_priori(sigma_alpha, sigma_beta):
+    with pm.Model():
+        a = pm.Normal("a", mu=0, sigma=sigma_alpha)
+        b = pm.Normal("b", mu=0, sigma=sigma_beta)
+        s = pm.Exponential("s", 1)
+        pm.Normal("y_obs", mu=a + b * floor, sigma=s, observed=log_radon)
+        previa = pm.sample_prior_predictive(draws=500, random_seed=SEMILLA)
+    return previa.prior_predictive["y_obs"].values.reshape(-1)
+
+y_elegidas = simular_desde_priori(2, 1)
+y_amplias = simular_desde_priori(10, 10)
+
+fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+for ax, muestras, titulo in zip(
+    axes, [y_elegidas, y_amplias], ["Elegidas: N(0, 2) y N(0, 1)", "Amplias: N(0, 10)"]
+):
+    limite = np.quantile(np.abs(muestras), 0.99)
+    ax.hist(muestras, bins=60, range=(-limite, limite), density=True,
+            color="#666666", edgecolor="white", alpha=0.85)
+    ax.axvspan(log_radon.min(), log_radon.max(), color=ACENTO, alpha=0.20,
+               label="Rango observado")
+    ax.set_xlabel("log(radón) simulado")
+    ax.set_title(titulo, fontsize=12)
+    ax.legend(fontsize=10)
+plt.show()
+```
+
+::: {.notes}
+Ojo a la escala del eje x: no es la misma en los dos paneles. Con las prioris
+amplias el modelo da por normales mediciones que abarcan casi veinte órdenes
+de magnitud.
+:::
+
+## Con 919 datos, OLS y el bayesiano coinciden
+
+```{python}
+#| label: tbl-comparacion-agrupado
+
+resumen = az.summary(idata, var_names=["alpha", "beta1", "sigma"])
+
+pd.DataFrame(
+    {
+        "Bayesiano (media)": resumen["mean"].round(3),
+        "HDI 3%": resumen["hdi_3%"].round(3),
+        "HDI 97%": resumen["hdi_97%"].round(3),
+        "r_hat": resumen["r_hat"],
+    }
+)
+```
+
+La diferencia no está en el punto central. Está en lo que te llevas además de él.
+
+# Modelo 2: un nivel propio por condado
+
+## Un intercepto por condado, cada uno por su cuenta
+
+$$
+y_i \sim \mathcal{N}(\alpha_{c[i]} + \beta_1 x_i, \; \sigma^2), \qquad \alpha_c \sim \mathcal{N}(0, 2^2)
+$$
+
+```{python}
+#| label: modelo-unpooled
+#| echo: true
+
+with pm.Model() as modelo_unpooled:
+    alpha = pm.Normal("alpha", mu=0, sigma=2, shape=n_condados)  # sin nada en común
+    beta1 = pm.Normal("beta1", mu=0, sigma=1)
+    sigma = pm.Exponential("sigma", 1)
+
+    y_obs = pm.Normal(
+        "y_obs", mu=alpha[county_idx] + beta1 * floor, sigma=sigma, observed=log_radon
+    )
+
+    idata_unpooled = pm.sample(draws=1000, tune=1000, random_seed=SEMILLA, progressbar=False)
+```
+
+## Los condados con pocos datos tienen intervalos enormes
+
+```{python}
+#| label: fig-unpooled
+
+alpha_unpooled = idata_unpooled.posterior["alpha"].values.reshape(-1, n_condados)
+media_unpooled = alpha_unpooled.mean(axis=0)
+hdi_unpooled = az.hdi(alpha_unpooled[np.newaxis, :, :], hdi_prob=0.94)
+
+n_obs = df["county_code"].value_counts().sort_index().values
+orden = np.argsort(n_obs)
+
+fig, ax = plt.subplots(figsize=(9, 4.5))
+y_pos = np.arange(n_condados)
+ax.errorbar(
+    media_unpooled[orden], y_pos,
+    xerr=[media_unpooled[orden] - hdi_unpooled[orden, 0],
+          hdi_unpooled[orden, 1] - media_unpooled[orden]],
+    fmt="o", markersize=3, color="black", ecolor="#888888", alpha=0.7, elinewidth=1,
+)
+ax.set_xlabel("α (nivel base de log(radón))")
+ax.set_ylabel("Condados, de menos a más datos")
+ax.set_yticks([])
+plt.show()
+```
+
+## Cada condado se estima solo, ignorando a los otros 84
+
+Tenga 116 mediciones o tenga una.
+
+# Modelo 3: los condados se prestan información
+
+## Los interceptos salen de una distribución común
+
+$$
+\begin{aligned}
+y_i &\sim \mathcal{N}(\alpha_{c[i]} + \beta_1 x_i, \; \sigma^2) \\[4pt]
+\alpha_c &\sim \mathcal{N}(\mu_\alpha, \sigma_\alpha^2) \\[4pt]
+\mu_\alpha &\sim \mathcal{N}(0, 2^2), \qquad \sigma_\alpha \sim \text{Exp}(1)
+\end{aligned}
+$$
+
+## Solo cambia una línea de código
+
+```{python}
+#| label: modelo-jerarquico
+#| echo: true
+
+with pm.Model() as modelo_jerarquico:
+    mu_alpha = pm.Normal("mu_alpha", mu=0, sigma=2)
+    sigma_alpha = pm.Exponential("sigma_alpha", 1)
+
+    alpha = pm.Normal("alpha", mu=mu_alpha, sigma=sigma_alpha, shape=n_condados)  # <—
+    beta1 = pm.Normal("beta1", mu=0, sigma=1)
+    sigma = pm.Exponential("sigma", 1)
+
+    y_obs = pm.Normal(
+        "y_obs", mu=alpha[county_idx] + beta1 * floor, sigma=sigma, observed=log_radon
+    )
+
+    idata_jerarquico = pm.sample(
+        draws=1000, tune=1000, target_accept=0.95, random_seed=SEMILLA, progressbar=False
+    )
+```
+
+## Los tres modelos son el mismo con distinta restricción
+
+::: {.incremental}
+
+- **Agrupado**: restricción dura. Todos los $\alpha_c$ valen lo mismo.
+- **Unpooled**: sin restricción. Cada $\alpha_c$ va donde lo lleven sus datos.
+- **Jerárquico**: restricción blanda. $\sigma_\alpha$ regula la fuerza, y **se estima**.
+
+:::
+
+## Los condados con pocos datos se acercan a la media global
+
+```{python}
+#| label: fig-shrinkage
+
+alpha_jer = idata_jerarquico.posterior["alpha"].values.reshape(-1, n_condados)
+media_jer = alpha_jer.mean(axis=0)
+mu_global = float(idata_jerarquico.posterior["mu_alpha"].values.mean())
+
+fig, ax = plt.subplots(figsize=(9, 4.5))
+for i in range(n_condados):
+    ax.plot([n_obs[i], n_obs[i]], [media_unpooled[i], media_jer[i]],
+            color="#BBBBBB", linewidth=0.8, zorder=0)
+ax.scatter(n_obs, media_unpooled, color="black", s=25, alpha=0.65, label="Unpooled")
+ax.scatter(n_obs, media_jer, facecolors="white", edgecolors=ACENTO, s=30,
+           linewidths=1.3, label="Jerárquico")
+ax.axhline(mu_global, color="black", linestyle="--", linewidth=1, label="Media global")
+ax.set_xlabel("Mediciones en el condado")
+ax.set_ylabel("α estimado")
+ax.legend()
+plt.show()
+```
+
+## Eso se llama *shrinkage* y no es un truco
+
+```{python}
+#| label: cociente-varianzas
+
+s_alpha = float(idata_jerarquico.posterior["sigma_alpha"].values.mean())
+s_resid = float(idata_jerarquico.posterior["sigma"].values.mean())
+```
+
+Con $\sigma_\alpha \approx$ `{python} f"{s_alpha:.2f}"` y $\sigma \approx$ `{python} f"{s_resid:.2f}"`:
+
+lo que el modelo sabe de Minnesota pesa sobre un condado tanto como pesarían unas **`{python} f"{(s_resid / s_alpha) ** 2:.0f}"` mediciones propias**.
+
+## El modelo reproduce los datos que ha visto
+
+```{python}
+#| label: fig-ppc
+
+with modelo_jerarquico:
+    pm.sample_posterior_predictive(
+        idata_jerarquico, extend_inferencedata=True,
+        random_seed=SEMILLA, progressbar=False,
+    )
+
+ax = az.plot_ppc(
+    idata_jerarquico, num_pp_samples=100, random_seed=SEMILLA,
+    colors=["#AAAAAA", "black", ACENTO], figsize=(9, 4),
+)
+for linea in ax.get_lines():
+    linea.set_linestyle("-")
+ax.set_xlabel("log(radón)")
+ax.set_ylabel("Densidad")
+ax.legend(fontsize=10)
+plt.show()
+```
+
+Que las réplicas se parezcan a los datos no demuestra que el modelo sea cierto: los ha visto.
+
+# Para qué sirve todo esto
+
+## La pregunta que le importa a alguien que compra una casa
+
+```{python}
+#| label: tbl-prediccion
+
+rng = np.random.default_rng(SEMILLA)
+codigos = df.drop_duplicates("county").set_index("county")["county_code"]
+post = idata_jerarquico.posterior
+
+def prediccion(condado, planta=0):
+    c = int(codigos[condado])
+    a_c = post["alpha"].values[:, :, c].reshape(-1)
+    b = post["beta1"].values.reshape(-1)
+    s = post["sigma"].values.reshape(-1)
+
+    mu = a_c + b * planta
+    y = rng.normal(mu, s)
+
+    hdi_mu = az.hdi(np.exp(mu), hdi_prob=0.94)
+    hdi_y = az.hdi(np.exp(y), hdi_prob=0.94)
+    return {
+        "Condado 3%": hdi_mu[0],
+        "Condado 97%": hdi_mu[1],
+        "Vivienda 3%": hdi_y[0],
+        "Vivienda 97%": hdi_y[1],
+        "P(> 4 pCi/L)": (np.exp(y) > 4).mean(),
+    }
+
+condados = ["ST LOUIS", "LAC QUI PARLE"]
+pd.DataFrame(
+    [prediccion(c) for c in condados],
+    index=[f"{c} ({(df['county'] == c).sum()} mediciones)" for c in condados],
+).style.format("{:.3g}")
+```
+
+Nivel medio del condado y medición de **una** vivienda no son lo mismo.
+
+## Saber el condado te sitúa el condado, no tu casa
+
+::: {.incremental}
+
+- El intervalo del condado se dispara al pasar de 116 mediciones a 2.
+- El de la vivienda concreta apenas se mueve: lo domina $\sigma$.
+- Por eso hay que medir cada vivienda.
+
+:::
+
+## Y aun así el modelo no decide por ti
+
+Te da la distribución del radón esperable. Decidir si ventilas, sellas o no haces nada exige poner precio a cada error.
+
+Eso es teoría de la decisión, y es otro seminario.
+
+# Recapitulando
+
+## Lo que te llevas
+
+::: {.incremental}
+
+- Inferir es decidir bajo incertidumbre.
+- El bayesiano te da la distribución del parámetro, no un punto y un p-valor.
+- La priori se elige siempre. Mírala antes de ajustar, no después.
+- Cuando faltan datos, apóyate en los casos parecidos.
+
+:::
+
+## Para profundizar
+
+- Gelman, Hill y Vehtari, *Regression and Other Stories*
+- McElreath, *Statistical Rethinking*
+
+# Segunda parte: taller
+
+## Ahora lo montas tú
+
+::: {.incremental}
+
+- Otro conjunto de datos.
+- Mismo recorrido: explorar, agrupar, separar, compartir.
+- El notebook está en el repositorio.
+
+:::
+
+## Material
+
+:::: {.columns}
+
+::: {.column}
+
+![https://leonardohansa.com](img/leonardohansa.png)
+
+:::
+
+::: {.column}
+
+![](img/qr.png)
+
+:::
+
+::::
+
+# leonardohansa.com
