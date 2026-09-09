@@ -7,7 +7,7 @@ Instrucciones para agentes que trabajen en este repositorio.
 Material de un seminario sobre inferencia bayesiana, en dos partes:
 
 - **Parte 1 (~1 h):** slides revealjs en `index.qmd`.
-- **Parte 2 (~1 h):** taller práctico en `notebooks/taller.ipynb`, con otro conjunto de datos (pendiente de decidir).
+- **Parte 2 (~1 h):** taller práctico en `notebooks/taller.ipynb`: se construye un modelo de *marketing mix* nacional con `data/meridian_national.csv`, siguiendo la metodología de Google Meridian. El eje no es la jerarquía, es la construcción del modelo: prioris, simulación previa, diagnóstico y lectura de la posteriori.
 
 Público: profesionales de datos. Saben Python y regresión; no saben bayesiana. Se puede dar por sabido OLS, p-valores e intervalos de confianza.
 
@@ -18,6 +18,8 @@ Idioma de todo el material: **español**. Los nombres de fichero, variables y ra
 El guion de la parte teórica sale de `cartas/01-inferencia-estadistica/carta.qmd` del repositorio **`estadistica-correspondencia`**, del mismo autor. Si hay que ampliar una sección de las slides, la fuente de verdad es esa carta: mismos datos, mismas prioris, mismas conclusiones. No inventes resultados nuevos ni cambies los valores de las prioris sin motivo.
 
 `data/radon.csv` es copia del que hay en ese repositorio.
+
+Para el taller, la fuente de verdad metodológica es el repositorio **`google/meridian`** (Apache 2.0): escalado del KPI y de los medios, adstock geométrico normalizado, saturación de Hill y, sobre todo, la priori sobre el ROI de la que se deduce `beta`. Si hay que ampliar el taller, se mira su código (`meridian/model/`), no la memoria. Sus prioris por defecto están en `meridian/model/prior_distribution.py`. `data/meridian_national.csv` es copia literal de su fichero `national_all_channels.csv`.
 
 Para el estilo visual de las slides, la referencia es el repositorio **`ceu-2606`**, también del autor.
 
@@ -39,6 +41,8 @@ Esto es lo que más importa al editar `index.qmd`:
 - Modelos con `pymc`; diagnóstico y HDI con `arviz` (`az.hdi`, `az.summary`, `az.plot_ppc`).
 - Rutas de datos relativas a la raíz del proyecto (`data/radon.csv`), porque Quarto ejecuta desde ahí. El notebook resuelve la raíz por su cuenta.
 - El muestreo en las slides usa `draws=1000, tune=1000` (y `target_accept=0.95` en el jerárquico) para que el render no se eternice. No lo subas sin necesidad.
+- El taller muestrea `draws=1000, tune=1000, chains=4, target_accept=0.95`: unos dos minutos y cero divergencias. Guarda la posteriori en `notebooks/idata/modelo_meridian.nc` (solo los grupos `posterior`, `sample_stats` y `observed_data`, para que no se vaya de tamaño); la predictiva posterior se recalcula al cargarla.
+- El notebook del taller se commitea **sin outputs**: lo ejecuta quien asiste.
 - `_quarto.yml` renderiza **solo** `index.qmd`. El notebook del taller queda fuera del sitio a propósito.
 
 ## Comandos
