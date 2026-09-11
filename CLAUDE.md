@@ -43,6 +43,7 @@ Esto es lo que más importa al editar `index.qmd`:
 - El muestreo en las slides usa `draws=1000, tune=1000` (y `target_accept=0.95` en el jerárquico) para que el render no se eternice. No lo subas sin necesidad.
 - El taller muestrea `draws=1000, tune=1000, chains=4, target_accept=0.97`: unos dos minutos y cero divergencias. Con `0.95` salen una o dos divergencias sueltas según la semilla, y eso pasaba ya con las prioris originales: no lo bajes. Guarda la posteriori en `notebooks/idata/modelo_meridian.nc` (solo los grupos `posterior`, `sample_stats` y `observed_data`, para que no se vaya de tamaño); la predictiva posterior se recalcula al cargarla.
 - El notebook del taller se commitea **sin outputs**: lo ejecuta quien asiste.
+- `notebooks/taller-solucion.ipynb` es ese mismo notebook con los nueve ejercicios resueltos, para el ponente. Es copia literal del taller salvo en tres sitios: la nota de la celda de cabecera, las nueve celdas `# Tu código aquí` y una celda markdown `**Respuesta.**` detrás de cada una. Los ids de celda compartidos son los mismos (`celda-NN`; las nuevas, `celda-NN-respuesta`), así que un diff entre los dos notebooks se lee de un vistazo. También va sin outputs y también queda fuera de `_quarto.yml`: se entrega aparte al terminar la sesión.
 - `_quarto.yml` renderiza **solo** `index.qmd`. El notebook del taller queda fuera del sitio a propósito.
 
 ## Comandos
@@ -58,5 +59,6 @@ El render ejecuta MCMC: la primera vez tarda minutos. `freeze: auto` guarda resu
 ## Al terminar un cambio
 
 - Si tocas el código de una celda, `_freeze/` queda obsoleto para esa celda: vuelve a renderizar y commitea el `_freeze/` actualizado.
+- Si tocas `notebooks/taller.ipynb` —un enunciado, una celda, el orden de las secciones—, replícalo en `notebooks/taller-solucion.ipynb`. Los dos notebooks se editan a la vez o se desincronizan en una sesión.
 - Si añades dependencias, actualiza `requirements.txt`.
 - Si cambias la estructura, actualiza `README.md` y este fichero.
