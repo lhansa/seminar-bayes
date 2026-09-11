@@ -19,7 +19,7 @@ El guion de la parte teórica sale de `cartas/01-inferencia-estadistica/carta.qm
 
 `data/radon.csv` es copia del que hay en ese repositorio.
 
-Para el taller, la fuente de verdad metodológica es el repositorio **`google/meridian`** (Apache 2.0): escalado del KPI y de los medios, adstock geométrico normalizado, saturación de Hill y, sobre todo, la priori sobre el ROI de la que se deduce `beta`. Si hay que ampliar el taller, se mira su código (`meridian/model/`), no la memoria. Sus prioris por defecto están en `meridian/model/prior_distribution.py`. `data/meridian_national.csv` es copia literal de su fichero `national_all_channels.csv`.
+Para el taller, la fuente de verdad metodológica es el repositorio **`google/meridian`** (Apache 2.0): escalado del KPI y de los medios, adstock geométrico normalizado, saturación de Hill y, sobre todo, la priori sobre el ROI de la que se deduce `beta`. Si hay que ampliar el taller, se mira su código (`meridian/model/`), no la memoria. Sus prioris por defecto están en `meridian/model/prior_distribution.py`. El taller las usa tal cual **salvo dos**: `sigma` pasa de `HalfNormal(5)` a `Exponential(1)` y `gamma` de `Normal(0, 5)` a `Normal(0, 1)`. En un modelo nacional con 156 semanas y el KPI estandarizado, las de Meridian atribuyen ingresos negativos a más del 3 % de las semanas simuladas; está justificado en la sección 5 del notebook. `mu` sí se queda en `Normal(0, 5)`, y tiene que quedarse: el término de medios aporta casi cuatro desviaciones típicas y `mu` es quien lo compensa. No las "arregles" comparando con `prior_distribution.py`. `data/meridian_national.csv` es copia literal de su fichero `national_all_channels.csv`.
 
 Para el estilo visual de las slides, la referencia es el repositorio **`ceu-2606`**, también del autor.
 
@@ -41,7 +41,7 @@ Esto es lo que más importa al editar `index.qmd`:
 - Modelos con `pymc`; diagnóstico y HDI con `arviz` (`az.hdi`, `az.summary`, `az.plot_ppc`).
 - Rutas de datos relativas a la raíz del proyecto (`data/radon.csv`), porque Quarto ejecuta desde ahí. El notebook resuelve la raíz por su cuenta.
 - El muestreo en las slides usa `draws=1000, tune=1000` (y `target_accept=0.95` en el jerárquico) para que el render no se eternice. No lo subas sin necesidad.
-- El taller muestrea `draws=1000, tune=1000, chains=4, target_accept=0.95`: unos dos minutos y cero divergencias. Guarda la posteriori en `notebooks/idata/modelo_meridian.nc` (solo los grupos `posterior`, `sample_stats` y `observed_data`, para que no se vaya de tamaño); la predictiva posterior se recalcula al cargarla.
+- El taller muestrea `draws=1000, tune=1000, chains=4, target_accept=0.97`: unos dos minutos y cero divergencias. Con `0.95` salen una o dos divergencias sueltas según la semilla, y eso pasaba ya con las prioris originales: no lo bajes. Guarda la posteriori en `notebooks/idata/modelo_meridian.nc` (solo los grupos `posterior`, `sample_stats` y `observed_data`, para que no se vaya de tamaño); la predictiva posterior se recalcula al cargarla.
 - El notebook del taller se commitea **sin outputs**: lo ejecuta quien asiste.
 - `_quarto.yml` renderiza **solo** `index.qmd`. El notebook del taller queda fuera del sitio a propósito.
 
