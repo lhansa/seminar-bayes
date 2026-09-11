@@ -54,11 +54,11 @@ quarto render     # a _site/
 quarto preview
 ```
 
-El render ejecuta MCMC: la primera vez tarda minutos. `freeze: auto` guarda resultados en `_freeze/`, que conviene commitear para que el workflow de Pages no vuelva a muestrear.
+El render ejecuta MCMC: la primera vez tarda un rato (unos 45 s en el runner de Actions; en local, lo que dé la máquina). `freeze: auto` guarda resultados en `_freeze/`, que **no se commitea**: el workflow de Pages cachea ese directorio por su cuenta, en el paso `Restore Quarto freeze cache` de `.github/workflows/publish.yml`.
 
 ## Al terminar un cambio
 
-- Si tocas el código de una celda, `_freeze/` queda obsoleto para esa celda: vuelve a renderizar y commitea el `_freeze/` actualizado.
+- Si tocas el código de una celda, `_freeze/` queda obsoleto para esa celda: vuelve a renderizar para comprobar que sigue saliendo lo que esperas. `_freeze/` se queda en local.
 - Si tocas `notebooks/taller.ipynb` —un enunciado, una celda, el orden de las secciones—, replícalo en `notebooks/taller-solucion.ipynb`. Los dos notebooks se editan a la vez o se desincronizan en una sesión.
 - Si añades dependencias, actualiza `requirements.txt`.
 - Si cambias la estructura, actualiza `README.md` y este fichero.

@@ -43,9 +43,9 @@ quarto render          # genera _site/
 quarto preview         # recarga en caliente mientras editas
 ```
 
-El render ejecuta varios modelos de pymc, así que la primera vez tarda unos minutos. El proyecto usa `freeze: auto`: mientras no cambie el código de una celda, Quarto reutiliza el resultado guardado en `_freeze/`.
+El render ejecuta varios modelos de pymc, así que la primera vez tarda un rato: unos 45 s en el runner de GitHub, y lo que dé tu máquina en local. El proyecto usa `freeze: auto`: mientras no cambie el código de una celda, Quarto reutiliza el resultado guardado en `_freeze/`.
 
-**Conviene commitear `_freeze/`.** Así el workflow de publicación no vuelve a muestrear y el despliegue baja de minutos a segundos.
+**`_freeze/` no se commitea.** El workflow de publicación cachea ese directorio entre ejecuciones, así que tampoco vuelve a muestrear salvo que cambie el código de una celda o caduque la caché.
 
 ## Publicación
 
