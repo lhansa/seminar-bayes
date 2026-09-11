@@ -4,7 +4,7 @@ Material del seminario **"Decidir sin certeza: una introducción a la inferencia
 
 Las slides se publican en GitHub Pages. El seminario tiene dos partes:
 
-1. **Teoría (~1 h).** Slides Quarto/revealjs en [`index.qmd`](index.qmd). Sigue el guion de la carta *01-inferencia-estadistica* del repositorio `estadistica-correspondencia`: la moneda (frecuentista vs. bayesiano) y el radón de Minnesota (agrupado → unpooled → jerárquico).
+1. **Teoría (~1 h).** Slides Quarto/revealjs en [`index.qmd`](index.qmd). Sigue el guion de la carta *01-inferencia-estadistica* del repositorio `estadistica-correspondencia`, con recortes: arranca con la moneda (frecuentista vs. bayesiano, resuelta por simulación) y sigue con el radón de Minnesota (agrupado → unpooled → jerárquico).
 2. **Taller (~1 h).** Notebook de Jupyter en [`notebooks/taller.ipynb`](notebooks/taller.ipynb). Aquí no se repite el recorrido de las slides: se construye un modelo de *marketing mix* desde cero con los datos simulados de [Google Meridian](https://github.com/google/meridian), siguiendo su metodología (escalado, adstock geométrico, saturación de Hill y priori sobre el ROI en vez de sobre los coeficientes). El foco es elegir prioris y defenderlas, simular desde ellas antes de ver los datos, diagnosticar el ajuste y leer la posteriori. La versión resuelta está en [`notebooks/taller-solucion.ipynb`](notebooks/taller-solucion.ipynb), que no se publica con las slides: se entrega al terminar la sesión.
 
 Público objetivo: profesionales de datos que manejan Python y regresión, pero no han trabajado con métodos bayesianos.

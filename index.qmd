@@ -29,73 +29,16 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from scipy import stats
 import statsmodels.api as sm
 import pymc as pm
 import arviz as az
 
-from src.estilo import ACENTO, aplicar_estilo
+from src.estilo import ACENTO, GRISES, aplicar_estilo
 
 aplicar_estilo()
 
 SEMILLA = 42
 ```
-
-# Obama y las decisiones imposibles
-
-## Un presidente solo decide sobre lo que nadie ha sabido resolver
-
-## Los problemas con solución clara no llegan a su mesa
-
-## Así que ninguna de sus decisiones es, con certeza, la correcta
-
-## Y aun así hay que decidir
-
-Con la mejor información disponible. Sin esperar a la certeza, que no va a llegar.
-
-## De eso va la estadística
-
-Una forma disciplinada de razonar y decidir con información incompleta.
-
-No elimina la incertidumbre. La ordena.
-
-# ¿Qué es la inferencia estadística?
-
-## Partir de lo observado para decir algo de lo no observado
-
-## Es un salto de fe: nunca tienes todos los datos
-
-La pregunta es cuánto puedes extrapolar de la parte al todo, y con cuánta incertidumbre.
-
-## Hay dos formas de dar ese salto
-
-::: {.incremental}
-
-- **Frecuentista**: probabilidad = frecuencia a largo plazo. El parámetro está fijo; lo aleatorio son los datos.
-- **Bayesiano**: probabilidad = grado de creencia. Los datos están fijos; lo incierto es el parámetro.
-
-:::
-
-## Todo el enfoque bayesiano se apoya en una sola regla
-
-$$
-P(\theta \mid \text{datos}) = \frac{P(\text{datos} \mid \theta) \cdot P(\theta)}{P(\text{datos})}
-$$
-
-## Cada término tiene nombre
-
-| Término | Nombre |
-|---|---|
-| $P(\theta \mid \text{datos})$ | posteriori: lo que buscas |
-| $P(\text{datos} \mid \theta)$ | verosimilitud: tu modelo |
-| $P(\theta)$ | priori: lo que creías antes |
-| $P(\text{datos})$ | constante normalizadora |
-
-## Ninguno de los dos paradigmas es mejor
-
-Vamos a recorrer los dos caminos con el mismo problema.
-
-# Problema 1: una moneda
 
 ## Lanzo una moneda 100 veces y salen 60 caras
 
@@ -103,9 +46,13 @@ Vamos a recorrer los dos caminos con el mismo problema.
 
 Es decir: ¿es $\theta > 0{,}5$?
 
-## Empecemos por lo intuitivo: simular
+## Quién soy
 
-Simulo 10.000 veces el experimento **suponiendo que la moneda es justa**.
+<!-- TODO: slide de presentación del ponente. La rellena Leonardo. -->
+
+# Primer intento: simular
+
+## Simulo 10.000 veces el experimento suponiendo que la moneda es justa
 
 ```{python}
 #| label: fig-sim-hist
@@ -150,27 +97,13 @@ ax.set_title(f"p-valor simulado ≈ {p_valor_sim:.3f}")
 plt.show()
 ```
 
-## Eso es un contraste de hipótesis
+## Ese número que acabo de contar es un contraste de hipótesis
 
 $$
 H_0: \theta = 0{,}5 \qquad \text{frente a} \qquad H_1: \theta > 0{,}5
 $$
 
-```{python}
-#| label: tbl-contraste
-
-p_hat = caras_obs / n_lanzamientos
-z = (p_hat - 0.5) / np.sqrt(0.5 * 0.5 / n_lanzamientos)
-p_z = stats.norm.sf(z)
-p_exacto = stats.binomtest(caras_obs, n=n_lanzamientos, p=0.5, alternative="greater").pvalue
-
-pd.DataFrame(
-    {
-        "Método": ["Simulación", "Aproximación normal", "Binomial exacto"],
-        "p-valor": [f"{p_valor_sim:.4f}", f"{p_z:.4f}", f"{p_exacto:.4f}"],
-    }
-).style.hide(axis="index")
-```
+Hay fórmulas para calcularlo sin simular. Dan lo mismo y dan igual.
 
 ## ¿Te has dado cuenta de lo que acabo de hacer?
 
@@ -191,7 +124,31 @@ pd.DataFrame(
 
 ## Vamos a no dar la vuelta al problema
 
-# El mismo problema, en bayesiano
+# La otra forma de dar el salto
+
+## Hay dos maneras de entender la probabilidad
+
+::: {.incremental}
+
+- **Frecuentista**: probabilidad = frecuencia a largo plazo. El parámetro está fijo; lo aleatorio son los datos.
+- **Bayesiano**: probabilidad = grado de creencia. Los datos están fijos; lo incierto es el parámetro.
+
+:::
+
+## Todo el enfoque bayesiano se apoya en una sola regla
+
+$$
+P(\theta \mid \text{datos}) = \frac{P(\text{datos} \mid \theta) \cdot P(\theta)}{P(\text{datos})}
+$$
+
+## Cada término tiene nombre
+
+| Término | Nombre |
+|---|---|
+| $P(\theta \mid \text{datos})$ | posteriori: lo que buscas |
+| $P(\text{datos} \mid \theta)$ | verosimilitud: tu modelo |
+| $P(\theta)$ | priori: lo que creías antes |
+| $P(\text{datos})$ | constante normalizadora |
 
 ## Necesitas tres cosas: datos, priori y modelo
 
@@ -291,6 +248,8 @@ Elegir una priori plana también es elegir.
 
 Ejemplo clásico de Gelman. Buscamos asociación y predicción, no causalidad.
 
+Trabajamos con el logaritmo: las mediciones son asimétricas y los efectos, multiplicativos.
+
 ```{python}
 #| label: carga-radon
 
@@ -299,23 +258,6 @@ floor = df["floor"].values
 log_radon = df["log_radon"].values
 county_idx = df["county_code"].values
 n_condados = df["county_code"].nunique()
-```
-
-## Trabajamos con el logaritmo del radón
-
-```{python}
-#| label: fig-hist-radon
-
-fig, ax = plt.subplots(figsize=(9, 4))
-ax.hist(df["log_radon"], bins=40, edgecolor="white", color="#666666", alpha=0.85)
-ax.axvline(
-    df["log_radon"].mean(), color=ACENTO, linestyle="--", linewidth=1.5,
-    label=f"Media = {df['log_radon'].mean():.2f}",
-)
-ax.set_xlabel("log(radón)")
-ax.set_ylabel("Frecuencia")
-ax.legend()
-plt.show()
 ```
 
 ## El sótano da niveles más altos que la planta baja
@@ -416,43 +358,11 @@ De la escala de la variable, no del deseo de que sean amplias.
 
 :::
 
-## Y esto se comprueba, no se afirma
+## Y esto no se afirma: se simula antes de mirar los datos
 
-```{python}
-#| label: fig-prior-predictive
+Se generan datos desde la priori y se comprueba si son creíbles. Con $\mathcal{N}(0, 10^2)$ salen mediciones de radón imposibles: casi veinte órdenes de magnitud.
 
-def simular_desde_priori(sigma_alpha, sigma_beta):
-    with pm.Model():
-        a = pm.Normal("a", mu=0, sigma=sigma_alpha)
-        b = pm.Normal("b", mu=0, sigma=sigma_beta)
-        s = pm.Exponential("s", 1)
-        pm.Normal("y_obs", mu=a + b * floor, sigma=s, observed=log_radon)
-        previa = pm.sample_prior_predictive(draws=500, random_seed=SEMILLA)
-    return previa.prior_predictive["y_obs"].values.reshape(-1)
-
-y_elegidas = simular_desde_priori(2, 1)
-y_amplias = simular_desde_priori(10, 10)
-
-fig, axes = plt.subplots(1, 2, figsize=(11, 4))
-for ax, muestras, titulo in zip(
-    axes, [y_elegidas, y_amplias], ["Elegidas: N(0, 2) y N(0, 1)", "Amplias: N(0, 10)"]
-):
-    limite = np.quantile(np.abs(muestras), 0.99)
-    ax.hist(muestras, bins=60, range=(-limite, limite), density=True,
-            color="#666666", edgecolor="white", alpha=0.85)
-    ax.axvspan(log_radon.min(), log_radon.max(), color=ACENTO, alpha=0.20,
-               label="Rango observado")
-    ax.set_xlabel("log(radón) simulado")
-    ax.set_title(titulo, fontsize=12)
-    ax.legend(fontsize=10)
-plt.show()
-```
-
-::: {.notes}
-Ojo a la escala del eje x: no es la misma en los dos paneles. Con las prioris
-amplias el modelo da por normales mediciones que abarcan casi veinte órdenes
-de magnitud.
-:::
+Es lo primero que vas a hacer en el taller.
 
 ## Con 919 datos, OLS y el bayesiano coinciden
 
@@ -475,15 +385,10 @@ La diferencia no está en el punto central. Está en lo que te llevas además de
 
 # Modelo 2: un nivel propio por condado
 
-## Un intercepto por condado, cada uno por su cuenta
-
-$$
-y_i \sim \mathcal{N}(\alpha_{c[i]} + \beta_1 x_i, \; \sigma^2), \qquad \alpha_c \sim \mathcal{N}(0, 2^2)
-$$
+## Cada condado se estima solo, y al que tiene una medición se le dispara el intervalo
 
 ```{python}
 #| label: modelo-unpooled
-#| echo: true
 
 with pm.Model() as modelo_unpooled:
     alpha = pm.Normal("alpha", mu=0, sigma=2, shape=n_condados)  # sin nada en común
@@ -496,8 +401,6 @@ with pm.Model() as modelo_unpooled:
 
     idata_unpooled = pm.sample(draws=1000, tune=1000, random_seed=SEMILLA, progressbar=False)
 ```
-
-## Los condados con pocos datos tienen intervalos enormes
 
 ```{python}
 #| label: fig-unpooled
@@ -523,9 +426,7 @@ ax.set_yticks([])
 plt.show()
 ```
 
-## Cada condado se estima solo, ignorando a los otros 84
-
-Tenga 116 mediciones o tenga una.
+Un `alpha` por condado (`shape=n_condados`) y cada uno por su cuenta: tenga 116 mediciones o tenga una.
 
 # Modelo 3: los condados se prestan información
 
@@ -607,6 +508,53 @@ s_resid = float(idata_jerarquico.posterior["sigma"].values.mean())
 Con $\sigma_\alpha \approx$ `{python} f"{s_alpha:.2f}"` y $\sigma \approx$ `{python} f"{s_resid:.2f}"`:
 
 lo que el modelo sabe de Minnesota pesa sobre un condado tanto como pesarían unas **`{python} f"{(s_resid / s_alpha) ** 2:.0f}"` mediciones propias**.
+
+## Antes de leer la posteriori, mira si el muestreador ha funcionado
+
+```{python}
+#| label: fig-traza
+
+az.plot_trace(
+    idata_jerarquico,
+    var_names=["mu_alpha", "sigma_alpha"],
+    chain_prop={"color": GRISES, "linestyle": ["-", "--", ":", "-."]},
+    figsize=(9, 4),
+)
+plt.tight_layout()
+plt.show()
+```
+
+Cada cadena arranca en un sitio distinto y todas acaban recorriendo lo mismo. El patrón que buscas es esa oruga peluda.
+
+## Y los tres números que lo confirman
+
+```{python}
+#| label: tbl-diagnostico
+
+resumen_jer = az.summary(
+    idata_jerarquico, var_names=["mu_alpha", "sigma_alpha", "beta1", "sigma"]
+)
+n_divergencias = int(idata_jerarquico.sample_stats["diverging"].sum())
+
+pd.DataFrame(
+    {
+        "r_hat": resumen_jer["r_hat"],
+        "ESS (centro)": resumen_jer["ess_bulk"].astype(int),
+        "ESS (colas)": resumen_jer["ess_tail"].astype(int),
+    }
+)
+```
+
+Divergencias: **`{python} f"{n_divergencias}"`**. Esto dice que el muestreador ha explorado bien la posteriori que le pedí. No que la posteriori sea buena.
+
+::: {.notes}
+`r_hat` compara la varianza entre cadenas con la de dentro de cada cadena: tiene que
+rondar 1. El ESS cuenta cuántas muestras efectivamente independientes sostienen el
+centro y las colas. Las divergencias son pasos que NUTS descarta por inestabilidad
+numérica; en este modelo la sospechosa habitual es el embudo que se forma alrededor de
+$\sigma_\alpha$ cuando se acerca a cero, y por eso el muestreo va con
+`target_accept=0.95`.
+:::
 
 ## El modelo reproduce los datos que ha visto
 
@@ -700,6 +648,8 @@ Eso es teoría de la decisión, y es otro seminario.
 - Cuando faltan datos, apóyate en los casos parecidos.
 
 :::
+
+Nada de esto elimina la incertidumbre. La ordena.
 
 ## Para profundizar
 
