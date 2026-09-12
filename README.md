@@ -31,7 +31,7 @@ img/                              favicon, logo y QR
 
 Hay dos maneras de llegar al taller con el entorno listo. La corta:
 
-**Google Colab.** Abre el badge de arriba, ejecuta la primera celda y ya está. Esa celda instala `pymc` y `h5netcdf` con las versiones fijadas y clona este repositorio en `/content/seminar-bayes`, así que el notebook encuentra los datos, `src/` y la posteriori guardada igual que en local. No hace falta cuenta de GitHub ni compilador: el runtime de Colab ya trae `gcc`. Si Colab pide reiniciar el entorno después de instalar, se reinicia y se vuelve a empezar por la primera celda.
+**Google Colab.** Abre el badge de arriba, ejecuta la primera celda y ya está. Esa celda instala `numpy`, `pymc`, `arviz` y `h5netcdf` con los mismos topes que `requirements.txt` y clona este repositorio en `/content/seminar-bayes`, así que el notebook encuentra los datos, `src/` y la posteriori guardada igual que en local. No hace falta cuenta de GitHub ni compilador: el runtime de Colab ya trae `gcc`. Si Colab pide reiniciar el entorno después de instalar, se reinicia y se vuelve a empezar por la primera celda.
 
 **En local.** Lo que viene a continuación. Quarto solo hace falta para las slides; para el taller basta con Python y `requirements.txt`.
 
