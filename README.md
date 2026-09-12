@@ -1,5 +1,7 @@
 # seminar-bayes
 
+[![Abrir en Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/lhansa/seminar-bayes/blob/main/notebooks/taller.ipynb)
+
 Material del seminario **"Decidir sin certeza: una introducción a la inferencia bayesiana"**.
 
 Las slides se publican en GitHub Pages. El seminario tiene dos partes:
@@ -24,6 +26,16 @@ notebooks/taller-solucion.ipynb   el taller con los nueve ejercicios resueltos
 notebooks/idata/                  posteriori guardada del modelo del taller
 img/                              favicon, logo y QR
 ```
+
+## Antes de la sesión
+
+Hay dos maneras de llegar al taller con el entorno listo. La corta:
+
+**Google Colab.** Abre el badge de arriba, ejecuta la primera celda y ya está. Esa celda instala `pymc` y `h5netcdf` con las versiones fijadas y clona este repositorio en `/content/seminar-bayes`, así que el notebook encuentra los datos, `src/` y la posteriori guardada igual que en local. No hace falta cuenta de GitHub ni compilador: el runtime de Colab ya trae `gcc`. Si Colab pide reiniciar el entorno después de instalar, se reinicia y se vuelve a empezar por la primera celda.
+
+**En local.** Lo que viene a continuación. Quarto solo hace falta para las slides; para el taller basta con Python y `requirements.txt`.
+
+Las versiones van fijadas a propósito: `pymc 6` exige `arviz 1.x`, que cambia la API de `az.summary`, `az.plot_ppc` y compañía, y este material está escrito contra `arviz 0.x`.
 
 ## Requisitos
 
@@ -57,6 +69,6 @@ El render ejecuta varios modelos de pymc, así que la primera vez tarda un rato:
 
 `data/meridian_national.csv` es el conjunto simulado de Google Meridian (Apache 2.0) que usa el taller: 156 semanas, cinco canales de pago con impresiones e inversión, dos controles y las conversiones. Detalle de las columnas en [`data/README.md`](data/README.md).
 
-El notebook del taller se ejecuta entero, muestreo incluido, en unos tres minutos. Quien vaya con prisa puede poner `MUESTREAR = False` y cargar la posteriori guardada en `notebooks/idata/`.
+El notebook del taller se ejecuta entero, muestreo incluido, en unos tres minutos. Quien vaya con prisa puede poner `MUESTREAR = False` y cargar la posteriori guardada en `notebooks/idata/`. En Colab esa posteriori llega con el clon del repositorio, así que la vía corta también funciona allí.
 
 Lo mismo vale para `notebooks/taller-solucion.ipynb`, que es el mismo notebook con los nueve ejercicios resueltos. Los dos se commitean sin outputs y los dos quedan fuera de `_quarto.yml`: el sitio publicado son solo las slides.

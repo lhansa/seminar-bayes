@@ -700,6 +700,24 @@ Nada de esto elimina la incertidumbre. La ordena.
 
 :::
 
+## El taller se abre en Colab: no hace falta instalar nada
+
+::: {.incremental}
+
+- `github.com/lhansa/seminar-bayes` → botón **Abrir en Colab**.
+- La primera celda instala lo que falta y se trae los datos. Dale ya, que tarda un minuto.
+- ¿Lo prefieres en tu máquina? Python 3.12, `requirements.txt` y un compilador de C.
+
+:::
+
+::: {.notes}
+Que abran Colab ahora, mientras sigo hablando: la instalación va sola y así nadie llega al
+taller peleándose con el entorno. Esa es la razón de Colab y no de un entorno local: pymc
+compila el modelo en C, y el compilador es justo lo que falta en la mitad de los portátiles
+con Windows. Quien ya tenga el entorno montado, que se quede en local: el notebook es el
+mismo, y el enlace de Colab sale del README del repositorio.
+:::
+
 ## Material
 
 :::: {.columns}

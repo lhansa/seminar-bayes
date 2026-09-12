@@ -8,7 +8,8 @@ statsmodels>=0.14
 matplotlib>=3.9
 
 # Estadística bayesiana
-pymc>=5.15
+# pymc 6 exige arviz 1.x, que cambia la API que usan las slides y el taller.
+pymc>=5.15,<6
 arviz>=0.23,<1
 
 # Integración con Quarto y notebook del taller
