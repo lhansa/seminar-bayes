@@ -42,6 +42,15 @@ SEMILLA = 42
 
 ## Lanzo una moneda 100 veces y salen 60 caras
 
+::: {.notes}
+Abrir aquí y no alargarse: la moneda es el gancho, no el tema. Se lanza el dato, se deja
+la pregunta en el aire y se pasa. Nada de definir inferencia, ni de adelantar que luego
+habrá dos enfoques. En la siguiente slide se pide respuesta a mano alzada, se cuentan los
+síes y se sigue; no se abre debate, que se come el bloque. La moneda entera, hasta
+"Vamos a no dar la vuelta al problema", son unos quince minutos. "Quién soy" es un
+minuto: a qué me dedico y por qué doy este seminario. No es un currículum.
+:::
+
 ## ¿Crees que la moneda favorece la cara?
 
 Es decir: ¿es $\theta > 0{,}5$?
@@ -115,6 +124,18 @@ Hay fórmulas para calcularlo sin simular. Dan lo mismo y dan igual.
 - Yo he calculado la probabilidad de **los datos**, suponiendo lo contrario de lo que quiero demostrar.
 - Y el dato ya ha ocurrido.
 
+:::
+
+::: {.notes}
+Este es el giro del bloque. En la slide anterior, callarse: la pregunta es retórica, pero
+el silencio la hace funcionar. Los tres puntos van de uno en uno y el que importa es el
+tercero: hemos calculado la probabilidad de algo que ya ha pasado, y encima suponiendo
+cierto lo contrario de lo que queríamos demostrar. Es el truco de Juan Tamariz, dar la
+vuelta a la situación sin que se note.
+
+Dejar claro, antes de entrar en el bayesiano, que el p-valor no está mal calculado:
+responde a otra pregunta. Si no se dice, alguien entiende "entonces el contraste no
+sirve" y ahí se va el resto del bloque.
 :::
 
 ## Por eso todo el mundo se lía con el p-valor
@@ -482,6 +503,9 @@ alpha_jer = idata_jerarquico.posterior["alpha"].values.reshape(-1, n_condados)
 media_jer = alpha_jer.mean(axis=0)
 mu_global = float(idata_jerarquico.posterior["mu_alpha"].values.mean())
 
+s_alpha = float(idata_jerarquico.posterior["sigma_alpha"].values.mean())
+s_resid = float(idata_jerarquico.posterior["sigma"].values.mean())
+
 fig, ax = plt.subplots(figsize=(9, 4.5))
 for i in range(n_condados):
     ax.plot([n_obs[i], n_obs[i]], [media_unpooled[i], media_jer[i]],
@@ -496,14 +520,22 @@ ax.legend()
 plt.show()
 ```
 
+::: {.notes}
+Mirar primero la izquierda del gráfico, donde las líneas grises son largas: son los
+condados con dos o tres mediciones, y se van casi enteros hacia la media global. A la
+derecha las líneas casi no existen: con cuarenta mediciones el modelo ya no tira de
+nadie.
+
+Las cifras, por si preguntan antes de la slide siguiente: el modelo estima una variación
+entre condados de $\sigma_\alpha \approx$ `{python} f"{s_alpha:.2f}"` y una variación
+entre viviendas del mismo condado de $\sigma \approx$ `{python} f"{s_resid:.2f}"`. El
+cociente $(\sigma/\sigma_\alpha)^2$ es lo que da las
+`{python} f"{(s_resid / s_alpha) ** 2:.0f}"` mediciones de la slide siguiente: por debajo
+de ese número manda Minnesota, por encima manda el condado, y justo ahí el tirón se
+reparte a medias.
+:::
+
 ## Eso se llama *shrinkage* y no es un truco
-
-```{python}
-#| label: cociente-varianzas
-
-s_alpha = float(idata_jerarquico.posterior["sigma_alpha"].values.mean())
-s_resid = float(idata_jerarquico.posterior["sigma"].values.mean())
-```
 
 Con $\sigma_\alpha \approx$ `{python} f"{s_alpha:.2f}"` y $\sigma \approx$ `{python} f"{s_resid:.2f}"`:
 
