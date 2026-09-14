@@ -694,9 +694,9 @@ Nada de esto elimina la incertidumbre. La ordena.
 
 ::: {.incremental}
 
-- Otro conjunto de datos.
-- Mismo recorrido: explorar, agrupar, separar, compartir.
-- El notebook está en el repositorio.
+- Otros datos: inversión en publicidad y facturación semanal.
+- Otro trabajo: elegir las prioris, defenderlas y diagnosticar lo que salga.
+- Dos modelos, seis ejercicios y el notebook en el repositorio.
 
 :::
 

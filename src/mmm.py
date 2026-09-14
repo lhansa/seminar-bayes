@@ -1,9 +1,8 @@
 """Utilidades del taller: datos y transformaciones del marketing mix model.
 
 Replican la metodología de Google Meridian (Apache-2.0) para un modelo nacional:
-escalado del KPI y de los medios, adstock geométrico normalizado y saturación de
-Hill. El modelo de pymc no está aquí: se escribe en el notebook, porque *es* el
-contenido del taller.
+escalado del KPI y de los medios y adstock geométrico normalizado. El modelo de
+pymc no está aquí: se escribe en el notebook, porque *es* el contenido del taller.
 
 Uso:
 
@@ -96,6 +95,10 @@ def hill(x, ec, slope=1.0):
 
     Va de 0 a 1 y vale 0.5 cuando `x == ec`: `ec` es el punto de media
     saturación, medido en medianas del canal.
+
+    El taller no la usa —la saturación se queda fuera para que el modelo de
+    medios quepa en media hora—, pero el notebook se la ofrece a quien quiera
+    añadirla en casa. De ahí que siga aquí.
     """
     return x**slope / (x**slope + ec**slope)
 

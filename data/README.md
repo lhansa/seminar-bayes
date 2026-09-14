@@ -45,5 +45,9 @@ Así el ROI queda en euros por euro y la priori que Meridian pone por defecto so
 
 En el mismo directorio del repositorio de Meridian hay versiones **por regiones**
 (`geo_all_channels.csv` y compañía), que son las que piden un modelo jerárquico. El taller
-las menciona pero usa la nacional: la segunda hora del seminario va de construir un
-modelo, no de repetir el shrinkage de las slides.
+usa la nacional: la segunda hora del seminario va de elegir prioris y diagnosticar, no de
+repetir el shrinkage de las slides.
+
+Del fichero, el taller usa los cinco canales de pago y los dos controles. `Promo` y el canal
+orgánico se quedan fuera; la **saturación** (la curva de Hill de Meridian) también, para que
+el modelo de medios quepa en la segunda media hora.
