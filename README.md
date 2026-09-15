@@ -62,7 +62,7 @@ El render ejecuta varios modelos de pymc, así que la primera vez tarda un rato:
 
 ## Las slides en un Codespace
 
-Quien no quiera instalar nada en su máquina puede abrir el repositorio en un Codespace: *Code → Codespaces → Create codespace on main*. `.devcontainer/` trae Python 3.12, Quarto, `build-essential` y `libopenblas-dev`, y al crearse el contenedor `post-create.sh` monta el venv con [`uv`](https://docs.astral.sh/uv/) e instala `requirements.txt`. Cuando termina:
+Quien no quiera instalar nada en su máquina puede abrir el repositorio en un Codespace: *Code → Codespaces → Create codespace on main*. La imagen es `mcr.microsoft.com/devcontainers/base:ubuntu-24.04`, el mismo Ubuntu que usa el workflow de publicación, y al crearse el contenedor `post-create.sh` instala el compilador, Quarto, [`uv`](https://docs.astral.sh/uv/) y el venv con `requirements.txt`. Tarda un par de minutos. Cuando termina:
 
 ```bash
 quarto render                  # genera _site/
@@ -70,6 +70,8 @@ quarto preview --port 4200     # ese puerto ya viene reenviado
 ```
 
 Los terminales nuevos arrancan con el venv activado, y Quarto usa su intérprete aunque no lo esté: `QUARTO_PYTHON` apunta a `.venv/bin/python`. El Codespace es para las slides; el taller se sigue haciendo en Colab.
+
+La versión de Quarto va fijada en una variable al principio de `post-create.sh`; para actualizarla, esa línea y nada más. Si algo falla durante la creación, el contenedor arranca igual y el error se lee en el terminal: el script se puede relanzar con `bash .devcontainer/post-create.sh` tantas veces como haga falta.
 
 ## Publicación
 
