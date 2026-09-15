@@ -63,6 +63,8 @@ quarto render     # a _site/
 quarto preview
 ```
 
+`.devcontainer/` levanta ese mismo entorno en un Codespace: imagen de Python 3.12, `build-essential` y `libopenblas-dev` para el backend C de PyTensor, Quarto como *feature* (sin TinyTeX ni Chromium: las slides son HTML) y `post-create.sh`, que monta el venv con `uv` desde `requirements.txt` y deja `QUARTO_PYTHON` apuntando a él. Es solo para las slides: el taller va por Colab. `requirements.txt` sigue siendo la única lista de dependencias, así que no hay `pyproject.toml` ni `uv.lock` que mantener en paralelo.
+
 El render ejecuta MCMC: la primera vez tarda un rato (unos 45 s en el runner de Actions; en local, lo que dé la máquina). `freeze: auto` guarda resultados en `_freeze/`, que **no se commitea**: el workflow de Pages cachea ese directorio por su cuenta, en el paso `Restore Quarto freeze cache` de `.github/workflows/publish.yml`.
 
 ## Al terminar un cambio

@@ -25,6 +25,7 @@ notebooks/taller.ipynb            taller práctico
 notebooks/taller-solucion.ipynb   el taller con los seis ejercicios resueltos
 notebooks/idata/                  posteriori guardada del modelo de medios del taller
 img/                              favicon, logo y QR
+.devcontainer/                    entorno de las slides en Codespaces (Quarto, compilador y venv con uv)
 ```
 
 ## Antes de la sesión
@@ -58,6 +59,17 @@ quarto preview         # recarga en caliente mientras editas
 El render ejecuta varios modelos de pymc, así que la primera vez tarda un rato: unos 45 s en el runner de GitHub, y lo que dé tu máquina en local. El proyecto usa `freeze: auto`: mientras no cambie el código de una celda, Quarto reutiliza el resultado guardado en `_freeze/`.
 
 **`_freeze/` no se commitea.** El workflow de publicación cachea ese directorio entre ejecuciones, así que tampoco vuelve a muestrear salvo que cambie el código de una celda o caduque la caché.
+
+## Las slides en un Codespace
+
+Quien no quiera instalar nada en su máquina puede abrir el repositorio en un Codespace: *Code → Codespaces → Create codespace on main*. `.devcontainer/` trae Python 3.12, Quarto, `build-essential` y `libopenblas-dev`, y al crearse el contenedor `post-create.sh` monta el venv con [`uv`](https://docs.astral.sh/uv/) e instala `requirements.txt`. Cuando termina:
+
+```bash
+quarto render                  # genera _site/
+quarto preview --port 4200     # ese puerto ya viene reenviado
+```
+
+Los terminales nuevos arrancan con el venv activado, y Quarto usa su intérprete aunque no lo esté: `QUARTO_PYTHON` apunta a `.venv/bin/python`. El Codespace es para las slides; el taller se sigue haciendo en Colab.
 
 ## Publicación
 
