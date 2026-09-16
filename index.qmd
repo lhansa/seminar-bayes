@@ -51,9 +51,9 @@ síes y se sigue; no se abre debate, que se come el bloque. La moneda entera, ha
 minuto: a qué me dedico y por qué doy este seminario. No es un currículum.
 :::
 
-## ¿Crees que la moneda favorece la cara?
+## ¿Crees que la moneda favorece cara frente a cruz?
 
-Es decir: ¿es $\theta > 0{,}5$?
+¿$p > 0{,}5$?
 
 ## Quién soy
 
@@ -106,24 +106,25 @@ ax.set_title(f"p-valor simulado ≈ {p_valor_sim:.3f}")
 plt.show()
 ```
 
-## Ese número que acabo de contar es un contraste de hipótesis
+## Ese número es una aproximación a lo que se suele obtener con un contraste de hipótesis
 
 $$
 H_0: \theta = 0{,}5 \qquad \text{frente a} \qquad H_1: \theta > 0{,}5
 $$
 
-Hay fórmulas para calcularlo sin simular. Dan lo mismo y dan igual.
+::: aside
+Hay fórmulas para calcularlo sin simular, pero no nos importan ahora.
+:::
 
 ## ¿Te has dado cuenta de lo que acabo de hacer?
 
 ## He dado la vuelta al problema
 
-::: {.incremental}
+- La he pregunta era sobre **la moneda**, la distribución de $p$.
+- La respuesta es sobre **los datos**, su distribución dado $p = 0{,}5$.
 
-- Tú me preguntas por **la moneda**.
-- Yo he calculado la probabilidad de **los datos**, suponiendo lo contrario de lo que quiero demostrar.
-- Y el dato ya ha ocurrido.
-
+::: aside
+Pero el dato ya ha ocurrido.
 :::
 
 ::: {.notes}
@@ -138,37 +139,40 @@ responde a otra pregunta. Si no se dice, alguien entiende "entonces el contraste
 sirve" y ahí se va el resto del bloque.
 :::
 
-## Por eso todo el mundo se lía con el p-valor
+## El p-valor me resulta tremendamente lioso
 
 - "Si el p-valor es bajo, ¿rechazaba o aceptaba?"
 - "¿Cuál era la hipótesis nula?"
 
 ## Vamos a no dar la vuelta al problema
 
-# La otra forma de dar el salto
+## La sesión de hoy va sobre:
 
-## Hay dos maneras de entender la probabilidad
+- Ingredientes necesarios para inferencia bayesiana.
+- Cómo escribirlos en PyMC, con alguna regresión como ejemplo.
+- Cómo interpretar los resultados.
 
-::: {.incremental}
-
-- **Frecuentista**: probabilidad = frecuencia a largo plazo. El parámetro está fijo; lo aleatorio son los datos.
-- **Bayesiano**: probabilidad = grado de creencia. Los datos están fijos; lo incierto es el parámetro.
-
+::: aside
+No tenemos mucho tiempo, así que dejaré muchas cosas fuera
 :::
+
+# El lanzamiento de moneda desde un punto de vista bayesiano
+
+## Nota inicial: no digo que no hagas estadística frecuentista
 
 ## Todo el enfoque bayesiano se apoya en una sola regla
 
 $$
-P(\theta \mid \text{datos}) = \frac{P(\text{datos} \mid \theta) \cdot P(\theta)}{P(\text{datos})}
+P(p \mid \text{datos}) = \frac{P(\text{datos} \mid p) \cdot P(p)}{P(\text{datos})}
 $$
 
 ## Cada término tiene nombre
 
 | Término | Nombre |
 |---|---|
-| $P(\theta \mid \text{datos})$ | posteriori: lo que buscas |
-| $P(\text{datos} \mid \theta)$ | verosimilitud: tu modelo |
-| $P(\theta)$ | priori: lo que creías antes |
+| $P(p \mid \text{datos})$ | posteriori: lo que buscas |
+| $P(\text{datos} \mid p)$ | verosimilitud: tu modelo |
+| $P(p)$ | priori: lo que creías antes |
 | $P(\text{datos})$ | constante normalizadora |
 
 ## Necesitas tres cosas: datos, priori y modelo
@@ -176,38 +180,74 @@ $$
 ::: {.incremental}
 
 - **Datos**: 60 caras en 100 lanzamientos.
-- **Priori**: qué valores te parecen razonables para $\theta$ antes de mirar.
-- **Verosimilitud**: cómo se generan los datos dado $\theta$. Aquí, una binomial.
+- **Priori**: qué valores te parecen razonables para $p$ antes de mirar.
+- **Verosimilitud**: cómo se generan los datos dado $p$. Aquí, una binomial.
 
 :::
 
-## En pymc eso son tres líneas
+## En PyMC queda así
 
 ```{python}
 #| label: modelo-moneda
 #| echo: true
 
 with pm.Model() as modelo_moneda:
-    theta = pm.Uniform("theta", lower=0, upper=1)          # priori
-    y = pm.Binomial("y", n=100, p=theta, observed=60)      # verosimilitud + datos
+    p_cara = pm.Uniform("p_cara", lower=0, upper=1)
+    y = pm.Binomial("y", n=100, p=p_cara, observed=60)
 
     idata_moneda = pm.sample(
         draws=2000, tune=1000, random_seed=SEMILLA, progressbar=False
     )
 ```
 
-## El resultado no es un número: es una distribución
+## 1. Priori
+
+```{python}
+#| label: modelo-moneda-1
+#| echo: true
+#| eval: false
+#| code-line-numbers: "4"
+import pymc as pm
+
+with pm.Model() as modelo_moneda:
+    p_cara = pm.Uniform("p_cara", lower=0, upper=1)
+    y = pm.Binomial("y", n=100, p=p_cara, observed=60)
+
+    idata_moneda = pm.sample(
+        draws=2000, tune=1000, random_seed=SEMILLA, progressbar=False
+    )
+```
+
+## 2. Datos y verosimilitud
+
+```{python}
+#| label: modelo-moneda-2
+#| echo: true
+#| eval: false
+#| code-line-numbers: "5"
+import pymc as pm
+
+with pm.Model() as modelo_moneda:
+    p_cara = pm.Uniform("p_cara", lower=0, upper=1)
+    y = pm.Binomial("y", n=100, p=p_cara, observed=60)
+
+    idata_moneda = pm.sample(
+        draws=2000, tune=1000, random_seed=SEMILLA, progressbar=False
+    )
+```
+
+## El resultado es una distribución
 
 ```{python}
 #| label: fig-posterior-moneda
 
-theta_post = idata_moneda.posterior["theta"].values.flatten()
+p_cara_post = idata_moneda.posterior["p_cara"].values.flatten()
 
 fig, ax = plt.subplots(figsize=(9, 4))
-ax.hist(theta_post, bins=50, density=True, edgecolor="white", color="#666666", alpha=0.85)
-ax.axvline(0.5, color="black", linestyle="--", linewidth=1.5, label="θ = 0,5 (justa)")
-ax.axvline(0.6, color=ACENTO, linewidth=2, label="θ observado = 0,60")
-ax.set_xlabel("θ (probabilidad de cara)")
+ax.hist(p_cara_post, bins=50, density=True, edgecolor="white", color="#666666", alpha=0.85)
+ax.axvline(0.5, color="black", linestyle="--", linewidth=1.5, label="p = 0,5 (justa)")
+ax.axvline(0.6, color=ACENTO, linewidth=2, label="p observado = 0,60")
+ax.set_xlabel("p (probabilidad de cara)")
 ax.set_ylabel("Densidad")
 ax.legend()
 plt.show()
@@ -219,29 +259,27 @@ plt.show()
 #| label: prob-sesgo
 #| echo: true
 
-float(np.mean(theta_post > 0.5))
+float(np.mean(p_cara_post > 0.5))
 ```
 
-## Cuidado con lo que significa ese número
+::: aside
+Ese número es la probabilidad de que la probabilidad de obtener cara sea estrictamente mayor que 0,5 dada esta priori y esta verosimilitud.
+:::
 
-Es la probabilidad de que $\theta > 0{,}5$ **dada esta priori y este modelo**.
-
-No es "la probabilidad de que la moneda esté trucada" en abstracto.
-
-## Intervalo de credibilidad: lo que el de confianza aparenta ser
+## Me costó años entender qué era un intervalo de confianza. Ya no me hace falta
 
 ```{python}
 #| label: fig-hdi-moneda
 
-hdi = az.hdi(theta_post, hdi_prob=0.95)
+hdi = az.hdi(p_cara_post, hdi_prob=0.95)
 
 fig, ax = plt.subplots(figsize=(9, 4))
-ax.hist(theta_post, bins=50, density=True, edgecolor="white", color="#BBBBBB", alpha=0.9)
+ax.hist(p_cara_post, bins=50, density=True, edgecolor="white", color="#BBBBBB", alpha=0.9)
 ax.axvspan(hdi[0], hdi[1], color=ACENTO, alpha=0.18)
-ax.axvline(0.5, color="black", linestyle="--", linewidth=1.5, label="θ = 0,5")
-ax.set_xlabel("θ (probabilidad de cara)")
+ax.axvline(0.5, color="black", linestyle="--", linewidth=1.5, label="p = 0,5")
+ax.set_xlabel("p (probabilidad de cara)")
 ax.set_ylabel("Densidad")
-ax.set_title(f"IC 95%: [{hdi[0]:.3f}, {hdi[1]:.3f}]")
+ax.set_title(f"Intervalo de credibilidad 95%: [{hdi[0]:.3f}, {hdi[1]:.3f}]")
 ax.legend()
 plt.show()
 ```
@@ -251,6 +289,14 @@ plt.show()
 Una uniforme en $\theta$ deja de ser plana si miras $\log\frac{\theta}{1-\theta}$.
 
 Elegir una priori plana también es elegir.
+
+```{python}
+p_logit = np.log(p_cara_post / (1 - p_cara_post))
+plt.hist(p_logit, bins=50, density=True, edgecolor="white", color="#666666", alpha=0.85)
+plt.xlabel("logit(p)")
+plt.ylabel("Densidad")
+plt.show()
+```
 
 ## Resumen del bloque
 
@@ -267,9 +313,8 @@ Elegir una priori plana también es elegir.
 
 ## 919 mediciones de radón en viviendas de 85 condados
 
-Ejemplo clásico de Gelman. Buscamos asociación y predicción, no causalidad.
-
-Trabajamos con el logaritmo: las mediciones son asimétricas y los efectos, multiplicativos.
+- Andrew Gelman.
+- Sin la parte de causalidad.
 
 ```{python}
 #| label: carga-radon
