@@ -120,19 +120,20 @@ Hay fórmulas para calcularlo sin simular, pero no nos importan ahora.
 
 ## He dado la vuelta al problema
 
-- La he pregunta era sobre **la moneda**, la distribución de $p$.
+- La pregunta era sobre **la moneda**, la distribución de $p$.
 - La respuesta es sobre **los datos**, su distribución dado $p = 0{,}5$.
 
 ::: aside
-Pero el dato ya ha ocurrido.
+Y ni siquiera sobre los datos que tengo: sobre los que podrían haber salido.
 :::
 
 ::: {.notes}
 Este es el giro del bloque. En la slide anterior, callarse: la pregunta es retórica, pero
 el silencio la hace funcionar. Los tres puntos van de uno en uno y el que importa es el
-tercero: hemos calculado la probabilidad de algo que ya ha pasado, y encima suponiendo
-cierto lo contrario de lo que queríamos demostrar. Es el truco de Juan Tamariz, dar la
-vuelta a la situación sin que se note.
+tercero: hemos calculado la probabilidad de unos datos que no hemos visto —60 caras o
+más, en repeticiones del experimento que no han ocurrido— y encima suponiendo cierto lo
+contrario de lo que queríamos demostrar. Es el truco de Juan Tamariz, dar la vuelta a la
+situación sin que se note.
 
 Dejar claro, antes de entrar en el bayesiano, que el p-valor no está mal calculado:
 responde a otra pregunta. Si no se dice, alguien entiende "entonces el contraste no
@@ -291,10 +292,24 @@ Una uniforme en $\theta$ deja de ser plana si miras $\log\frac{\theta}{1-\theta}
 Elegir una priori plana también es elegir.
 
 ```{python}
-p_logit = np.log(p_cara_post / (1 - p_cara_post))
-plt.hist(p_logit, bins=50, density=True, edgecolor="white", color="#666666", alpha=0.85)
-plt.xlabel("logit(p)")
-plt.ylabel("Densidad")
+#| label: fig-priori-plana
+
+rng_priori = np.random.default_rng(SEMILLA)
+p_priori = rng_priori.uniform(0, 1, 100_000)
+logit_priori = np.log(p_priori / (1 - p_priori))
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 3.5))
+ax1.hist(p_priori, bins=50, density=True, edgecolor="white", color="#666666", alpha=0.85)
+ax1.set_xlabel("p")
+ax1.set_ylabel("Densidad")
+ax1.set_title("Plana en p")
+
+ax2.hist(logit_priori, bins=60, range=(-8, 8), density=True,
+         edgecolor="white", color=ACENTO, alpha=0.85)
+ax2.set_xlabel("logit(p)")
+ax2.set_title("La misma priori, en logit(p)")
+
+plt.tight_layout()
 plt.show()
 ```
 
@@ -302,10 +317,10 @@ plt.show()
 
 ::: {.incremental}
 
-- El frecuentista calcula la probabilidad de **los datos**.
+- El frecuentista calcula la probabilidad de **los datos**, o de otros más extremos.
 - El bayesiano calcula la probabilidad del **parámetro**.
 - El segundo responde a la pregunta que yo hice.
-- El precio: mucho más cómputo.
+- El precio: elegir la priori, y mucho más cómputo.
 
 :::
 
@@ -461,7 +476,7 @@ De la escala de la variable, no del deseo de que sean amplias.
 
 ## Y esto no se afirma: se simula antes de mirar los datos
 
-Se generan datos desde la priori y se comprueba si son creíbles. Con $\mathcal{N}(0, 10^2)$ salen mediciones de radón imposibles: casi veinte órdenes de magnitud.
+Se generan datos desde la priori y se comprueba si son creíbles. Con $\mathcal{N}(0, 10^2)$ salen mediciones de radón imposibles: diecisiete órdenes de magnitud.
 
 Es lo primero que vas a hacer en el taller.
 
@@ -493,7 +508,7 @@ La diferencia no está en el punto central. Está en lo que te llevas además de
 #| echo: true
 
 with pm.Model() as modelo_unpooled:
-    alpha = pm.Normal("alpha", mu=0, sigma=2, shape=n_condados)  # sin nada en común
+    alpha = pm.Normal("alpha", mu=0, sigma=2, shape=n_condados)  # un alpha por condado
     beta1 = pm.Normal("beta1", mu=0, sigma=1)
     sigma = pm.Exponential("sigma", 1)
 
@@ -506,7 +521,7 @@ with pm.Model() as modelo_unpooled:
 
 ::: aside
 
-La única diferencia es ese `shape=n_condados` en la priori de `alpha`.
+La única diferencia es ese `shape=n_condados`. Los condados siguen compartiendo pendiente y $\sigma$, y la priori sigue tirando un poco de los que tienen una o dos mediciones.
 
 :::
 
@@ -576,7 +591,7 @@ with pm.Model() as modelo_jerarquico:
 ::: {.incremental}
 
 - **Agrupado**: restricción dura. Todos los $\alpha_c$ valen lo mismo.
-- **Unpooled**: sin restricción. Cada $\alpha_c$ va donde lo lleven sus datos.
+- **Unpooled**: restricción fija. Cada $\alpha_c$ lo deciden sus datos y una priori que no mira a los demás condados.
 - **Jerárquico**: restricción blanda. $\sigma_\alpha$ regula la fuerza, y **se estima**.
 
 :::
@@ -612,6 +627,11 @@ Mirar primero la izquierda del gráfico, donde las líneas grises son largas: so
 condados con dos o tres mediciones, y se van casi enteros hacia la media global. A la
 derecha las líneas casi no existen: con cuarenta mediciones el modelo ya no tira de
 nadie.
+
+Si alguien hila fino: el punto negro no es el estimador libre del condado, porque la
+$\mathcal{N}(0, 2^2)$ del modelo unpooled ya lo ha encogido hacia el 0 —un 13 % en los
+condados con una sola medición—. Es decir, el tirón real es algo mayor que el que se ve
+dibujado. La forma del abanico no cambia.
 
 Las cifras, por si preguntan antes de la slide siguiente: el modelo estima una variación
 entre condados de $\sigma_\alpha \approx$ `{python} f"{s_alpha:.2f}"` y una variación
@@ -655,6 +675,14 @@ resumen_jer = az.summary(
 )
 n_divergencias = int(idata_jerarquico.sample_stats["diverging"].sum())
 
+veredicto = (
+    "Esto dice que el muestreador ha explorado bien la posteriori que le pedí. "
+    "No que la posteriori sea buena."
+    if n_divergencias == 0
+    else "Esto dice que el muestreador se ha dejado zonas sin explorar: "
+         "hay que resolverlo antes de leer nada de la posteriori."
+)
+
 pd.DataFrame(
     {
         "r_hat": resumen_jer["r_hat"],
@@ -664,7 +692,7 @@ pd.DataFrame(
 )
 ```
 
-Divergencias: **`{python} f"{n_divergencias}"`**. Esto dice que el muestreador ha explorado bien la posteriori que le pedí. No que la posteriori sea buena.
+Divergencias: **`{python} f"{n_divergencias}"`**. `{python} veredicto`
 
 ::: {.notes}
 `r_hat` compara la varianza entre cadenas con la de dentro de cada cadena: tiene que
@@ -720,7 +748,11 @@ def prediccion(condado, planta=0):
     mu = a_c + b * planta
     y = rng.normal(mu, s)
 
-    hdi_mu = az.hdi(np.exp(mu), hdi_prob=0.94)
+    # exp(mu) es la mediana del condado. Su nivel medio en pCi/L es la media
+    # de la lognormal: hay que devolver la sigma a la escala original.
+    nivel_medio = np.exp(mu + s**2 / 2)
+
+    hdi_mu = az.hdi(nivel_medio, hdi_prob=0.94)
     hdi_y = az.hdi(np.exp(y), hdi_prob=0.94)
     return {
         "Condado 3%": hdi_mu[0],
