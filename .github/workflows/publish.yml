@@ -43,12 +43,18 @@ jobs:
 
       # El muestreo MCMC es lo caro del render. Con freeze: auto, Quarto reutiliza
       # los resultados mientras no cambie el código de las celdas.
+      #
+      # Sin `restore-keys` a propósito: Quarto invalida _freeze/ por el hash del código de
+      # la celda, no por lo que esa celda importa. Un cambio en src/ (el estilo de las
+      # figuras, por ejemplo) no toca ni una línea de index.qmd, así que con una caché vieja
+      # restaurada por prefijo se publicarían las figuras de antes. Sin fallback, cualquier
+      # cambio en index.qmd, src/ o requirements.txt fuerza el render completo: son los ~45 s
+      # de MCMC que ya cuesta la primera vez.
       - name: Restore Quarto freeze cache
         uses: actions/cache@v4
         with:
           path: _freeze
           key: freeze-${{ hashFiles('index.qmd', 'src/**', 'requirements.txt') }}
-          restore-keys: freeze-
 
       - name: Render slides
         run: quarto render

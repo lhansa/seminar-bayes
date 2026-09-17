@@ -1,7 +1,28 @@
 /*-- scss:defaults --*/
-$presentation-heading-color: #800080 !default;
+
+// Color de marca (leonardohansa.com): el mismo morado del hexágono del logo y el mismo
+// que ACENTO en src/estilo.py. Se define aquí una vez y todo lo demás sale de él.
+$morado: #800080;
+$morado-claro: #a64da6;
+$morado-tenue: #e6d6e6;
+$gris-texto: #4a4a4a;
+
+$presentation-heading-color: $morado !default;
+
+// El tema `simple` trae los enlaces en azul marino (#00008b). Además de los enlaces, esta
+// variable es la que reveal.js usa para pintar la barra de progreso.
+$link-color: $morado !default;
+$link-color-hover: $morado-claro !default;
+
+$selection-bg: $morado !default;
+$selection-color: #ffffff !default;
+
+$code-block-border-color: $morado-tenue !default;
 
 /*-- scss:rules --*/
+
+/* Sombra dura, sin difuminar: es el gesto de estas slides. El logo va exento, y las
+   figuras generadas por las celdas también. */
 img {
   box-shadow: 8px 8px 0px rgba(0, 0, 0, .3);
 }
@@ -15,13 +36,90 @@ img.slide-logo {
   box-shadow: none;
 }
 
-.custom-title {
-  h1, h2 {
-    color: #800080;
-  }
-}
-
 /* Las slides de este seminario llevan poco texto: el título hace el trabajo */
 .reveal h2 {
   font-size: 1.5em;
+}
+
+/* Portada: lo primero que se proyecta, y hasta ahora era el tema de fábrica */
+#title-slide .title {
+  color: $morado;
+}
+
+#title-slide .subtitle {
+  color: $gris-texto;
+  font-style: normal;
+  display: inline-block;
+  border-bottom: 5px solid $morado;
+  padding-bottom: 0.35em;
+  margin-bottom: 0.6em;
+}
+
+#title-slide .author,
+#title-slide .quarto-title-author-name,
+#title-slide .date {
+  color: $gris-texto;
+}
+
+/* Slides de sección (`#`). Sin invertir el fondo: un filete bajo el título basta para
+   distinguirlas de una slide normal, ahora que ambas llevan el título morado. */
+.reveal section.level1 > h1,
+.reveal section:not(#title-slide) > h1:only-child {
+  display: inline-block;
+  border-bottom: 6px solid $morado;
+  padding-bottom: 0.2em;
+}
+
+/* Las negritas del cuerpo son el único acento de color dentro del texto */
+.reveal strong {
+  color: $morado;
+}
+
+.reveal ul li::marker,
+.reveal ol li::marker {
+  color: $morado;
+}
+
+/* Tablas: filete de marca bajo la cabecera. La segunda mitad del selector es para las
+   que salen de un `pandas .style`, que trae su propio CSS. */
+.reveal table thead th,
+.reveal .cell-output table thead th {
+  border-bottom: 2px solid $morado;
+}
+
+.reveal blockquote {
+  border-left: 4px solid $morado;
+  background: none;
+  box-shadow: none;
+  font-style: normal;
+  padding-left: 0.8em;
+}
+
+.reveal .slide aside {
+  border-left: 3px solid $morado-tenue;
+  padding-left: 0.6em;
+  color: $gris-texto;
+}
+
+/* Barra de progreso y número de slide: los dos elementos de cromo permanente */
+.reveal .progress {
+  color: $morado;
+}
+
+.reveal .progress span {
+  background-color: $morado;
+}
+
+.reveal .slide-number {
+  background-color: transparent;
+  color: $morado;
+  font-weight: 600;
+}
+
+.reveal .slide-number a {
+  color: $morado;
+}
+
+.reveal .slide-menu-button > * {
+  color: $morado;
 }

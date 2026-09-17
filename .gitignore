@@ -3,6 +3,7 @@ __pycache__/
 
 /.quarto/
 /_site/
+/_freeze/
 **/*.quarto_ipynb
 
 .venv/
