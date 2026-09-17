@@ -12,7 +12,7 @@ format:
       - custom.scss
     logo: img/favicon.png
     transition: none
-    slide-number: true
+    slide-number: false
     incremental: false
 
 execute:
