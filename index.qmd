@@ -273,6 +273,7 @@ def log_numerador(p):
 
 n_pasos = 2000
 subida = 50
+zoom = 200  # los pasos que se ven de cerca: con los dos mil no se distingue ninguno
 cadena = np.empty(n_pasos)
 
 actual = 0.10  # arranque deliberadamente malo: la cadena no sabe nada
@@ -283,19 +284,23 @@ for i in range(n_pasos):
     cadena[i] = actual
 
 
-def dibuja_recorrido(ax):
+def dibuja_recorrido(ax, hasta=n_pasos, detalle=False):
+    """El recorrido de la cadena. Con detalle=True se ven los pasos y los rechazos."""
     ax.axvspan(0, subida, color="#DDDDDD", alpha=0.7, zorder=0,
                label="Subida inicial (descartada)")
-    ax.plot(cadena, color=GRISES[1], linewidth=0.8)
+    if detalle:
+        ax.plot(cadena[:hasta], color=GRISES[1], linewidth=1.1, marker="o", markersize=2.5)
+    else:
+        ax.plot(cadena[:hasta], color=GRISES[2], linewidth=0.5)
     ax.axhline(0.6, color=ACENTO, linewidth=2, label="p observado = 0,60")
     ax.set_xlabel("Paso")
     ax.set_ylabel("p (probabilidad de cara)")
     ax.set_ylim(0, 0.8)
-    ax.legend(loc="lower right")
 
 
 fig, ax = plt.subplots(figsize=(9, 4))
-dibuja_recorrido(ax)
+dibuja_recorrido(ax, hasta=zoom, detalle=True)
+ax.legend(loc="lower right")
 plt.show()
 ```
 
@@ -303,6 +308,10 @@ plt.show()
 La regla, en cuatro frases: estás en un valor de $p$, propones otro cercano, miras cuántas
 veces más plausible es —priori por verosimilitud, nada más— y si es mejor, te mueves; si es
 peor, te mueves con esa probabilidad. Dos mil veces.
+
+Aquí se ven los doscientos primeros pasos de esos dos mil, porque con los dos mil no se
+distingue ninguno. Señalar los tramos planos: son los rechazos, los pasos en los que la
+cadena propone un valor peor y se queda donde estaba. Un tercio de las veces, más o menos.
 
 El arranque en 0,10 es a propósito: la cadena no sabe nada cuando empieza, y los primeros
 pasos son subida, no muestreo. Eso es el `tune=1000` de la slide del modelo, que PyMC usa
@@ -318,13 +327,13 @@ propone usando el gradiente y es mucho más listo. La idea de fondo es la misma.
 #| label: graf-caminata-posteriori
 
 fig, (ax1, ax2) = plt.subplots(
-    1, 2, figsize=(9, 4), sharey=True, gridspec_kw={"width_ratios": [3, 1]}
+    1, 2, figsize=(9, 4), sharey=True, gridspec_kw={"width_ratios": [2, 1]}
 )
 
-dibuja_recorrido(ax1)
+dibuja_recorrido(ax1)  # ahora los dos mil pasos, sin detalle: importa el montón
 
 ax2.hist(
-    cadena[subida:], bins=40, density=True, orientation="horizontal",
+    cadena[subida:], bins=30, density=True, orientation="horizontal",
     color="#666666", edgecolor="white", alpha=0.85,
 )
 ax2.axhline(0.6, color=ACENTO, linewidth=2)
@@ -340,10 +349,12 @@ Muestrear solo necesita el numerador: $P(p \mid \text{datos}) \propto P(\text{da
 :::
 
 ::: {.notes}
-Aquí está el truco entero: como el paso se acepta según la plausibilidad relativa, la cadena
-acaba pasando en cada zona un tiempo proporcional a lo plausible que es esa zona. El recuento
-de visitas no se parece a la posteriori: es la posteriori. Y no se ha resuelto ninguna
-integral por el camino.
+Ahora se ve la cadena entera, los dos mil pasos, y al lado el montón que deja. Aquí está el
+truco: como el paso se acepta según la plausibilidad relativa, la cadena acaba pasando en cada
+zona un tiempo proporcional a lo plausible que es esa zona. El recuento de visitas no se
+parece a la posteriori: es la posteriori. Y no se ha resuelto ninguna integral por el camino.
+
+Si conviene, volver un segundo a la slide del histograma de PyMC: es el mismo dibujo.
 
 De ahí el aside. Para decidir si me muevo solo comparo dos valores de $p$, y en esa
 comparación la constante normalizadora —la misma $P(\text{datos})$ de la tabla de hace un
