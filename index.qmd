@@ -17,7 +17,7 @@ format:
       - custom.scss
     logo: img/favicon.png
     transition: none
-    slide-number: true
+    slide-number: false
     incremental: false
 ---
 
@@ -64,7 +64,7 @@ minuto: a qué me dedico y por qué doy este seminario. No es un currículum.
 ## Simulo 10.000 veces el experimento suponiendo que la moneda es justa
 
 ```{python}
-#| label: fig-sim-hist
+#| label: graf-sim-hist
 
 np.random.seed(SEMILLA)
 
@@ -85,7 +85,7 @@ plt.show()
 ## Cuento qué proporción de esas simulaciones da 60 caras o más
 
 ```{python}
-#| label: fig-pvalor-hist
+#| label: graf-pvalor-hist
 
 p_valor_sim = np.mean(caras >= caras_obs)
 
@@ -240,7 +240,7 @@ with pm.Model() as modelo_moneda:
 ## El resultado es una distribución
 
 ```{python}
-#| label: fig-posterior-moneda
+#| label: graf-posterior-moneda
 
 p_cara_post = idata_moneda.posterior["p_cara"].values.flatten()
 
@@ -270,7 +270,7 @@ Ese número es la probabilidad de que la probabilidad de obtener cara sea estric
 ## Me costó años entender qué era un intervalo de confianza. Ya no me hace falta
 
 ```{python}
-#| label: fig-hdi-moneda
+#| label: graf-hdi-moneda
 
 hdi = az.hdi(p_cara_post, hdi_prob=0.95)
 
@@ -292,7 +292,7 @@ Una uniforme en $\theta$ deja de ser plana si miras $\log\frac{\theta}{1-\theta}
 Elegir una priori plana también es elegir.
 
 ```{python}
-#| label: fig-priori-plana
+#| label: graf-priori-plana
 
 rng_priori = np.random.default_rng(SEMILLA)
 p_priori = rng_priori.uniform(0, 1, 100_000)
@@ -344,7 +344,7 @@ n_condados = df["county_code"].nunique()
 ## El sótano da niveles más altos que la planta baja
 
 ```{python}
-#| label: fig-boxplot-floor
+#| label: graf-boxplot-floor
 
 fig, ax = plt.subplots(figsize=(7, 4))
 bp = ax.boxplot(
@@ -365,7 +365,7 @@ plt.show()
 ## Pero hay condados con 100 mediciones y condados con una
 
 ```{python}
-#| label: fig-obs-condado
+#| label: graf-obs-condado
 
 conteo = df["county"].value_counts()
 
@@ -391,7 +391,7 @@ $$
 $$
 
 ```{python}
-#| label: tbl-ols
+#| label: tabla-ols
 
 X = sm.add_constant(df[["floor"]])
 ols = sm.OLS(df["log_radon"], X).fit()
@@ -483,7 +483,7 @@ Es lo primero que vas a hacer en el taller.
 ## Con 919 datos, OLS y el bayesiano coinciden
 
 ```{python}
-#| label: tbl-comparacion-agrupado
+#| label: tabla-comparacion-agrupado
 
 resumen = az.summary(idata, var_names=["alpha", "beta1", "sigma"])
 
@@ -528,7 +528,7 @@ La única diferencia es ese `shape=n_condados`. Los condados siguen compartiendo
 ## ...y con pocas mediciones, se dispara la incertidumbre
 
 ```{python}
-#| label: fig-unpooled
+#| label: graf-unpooled
 
 alpha_unpooled = idata_unpooled.posterior["alpha"].values.reshape(-1, n_condados)
 media_unpooled = alpha_unpooled.mean(axis=0)
@@ -599,7 +599,7 @@ with pm.Model() as modelo_jerarquico:
 ## Los condados con pocos datos se acercan a la media global
 
 ```{python}
-#| label: fig-shrinkage
+#| label: graf-shrinkage
 
 alpha_jer = idata_jerarquico.posterior["alpha"].values.reshape(-1, n_condados)
 media_jer = alpha_jer.mean(axis=0)
@@ -651,7 +651,7 @@ lo que el modelo sabe de Minnesota pesa sobre un condado tanto como pesarían un
 ## Antes de leer la posteriori, mira si el muestreador ha funcionado
 
 ```{python}
-#| label: fig-traza
+#| label: graf-traza
 
 az.plot_trace(
     idata_jerarquico,
@@ -668,7 +668,7 @@ Cada cadena arranca en un sitio distinto y todas acaban recorriendo lo mismo. El
 ## Y los tres números que lo confirman
 
 ```{python}
-#| label: tbl-diagnostico
+#| label: tabla-diagnostico
 
 resumen_jer = az.summary(
     idata_jerarquico, var_names=["mu_alpha", "sigma_alpha", "beta1", "sigma"]
@@ -706,7 +706,7 @@ $\sigma_\alpha$ cuando se acerca a cero, y por eso el muestreo va con
 ## El modelo reproduce los datos que ha visto
 
 ```{python}
-#| label: fig-ppc
+#| label: graf-ppc
 
 with modelo_jerarquico:
     pm.sample_posterior_predictive(
@@ -733,7 +733,7 @@ Que las réplicas se parezcan a los datos no demuestra que el modelo sea cierto:
 ## La pregunta que le importa a alguien que compra una casa
 
 ```{python}
-#| label: tbl-prediccion
+#| label: tabla-prediccion
 
 rng = np.random.default_rng(SEMILLA)
 codigos = df.drop_duplicates("county").set_index("county")["county_code"]

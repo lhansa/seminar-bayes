@@ -101,23 +101,14 @@ img.slide-logo {
   color: $gris-texto;
 }
 
-/* Barra de progreso y número de slide: los dos elementos de cromo permanente */
+/* Cromo permanente. El contador de slide se quitó (issue #27), así que aquí solo queda
+   la barra de progreso. */
 .reveal .progress {
   color: $morado;
 }
 
 .reveal .progress span {
   background-color: $morado;
-}
-
-.reveal .slide-number {
-  background-color: transparent;
-  color: $morado;
-  font-weight: 600;
-}
-
-.reveal .slide-number a {
-  color: $morado;
 }
 
 .reveal .slide-menu-button > * {
