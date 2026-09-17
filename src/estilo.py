@@ -12,11 +12,15 @@ Uso:
 from cycler import cycler
 import matplotlib.pyplot as plt
 
-# Morado del tema de las slides (custom.scss), para acentos puntuales
+# Morado de marca, el mismo que define custom.scss, para acentos puntuales
 ACENTO = "#800080"
 
-# Escala de grises para series múltiples
+# Escala de grises para series múltiples. Se mantiene gris a propósito: el morado marca
+# lo que importa en cada figura, y si se moradea la serie entera deja de marcar nada.
 GRISES = ["#000000", "#4A4A4A", "#7A7A7A", "#AAAAAA"]
+
+# Morado muy desaturado para la rejilla: de marca sin ganar peso visual
+REJILLA = "#E6D6E6"
 
 
 def aplicar_estilo():
@@ -30,7 +34,7 @@ def aplicar_estilo():
             "text.color": "black",
             "xtick.color": "black",
             "ytick.color": "black",
-            "grid.color": "#CCCCCC",
+            "grid.color": REJILLA,
             "grid.linestyle": "--",
             "grid.linewidth": 0.5,
             "axes.grid": True,
@@ -45,6 +49,7 @@ def aplicar_estilo():
             "savefig.bbox": "tight",
             "font.size": 13,
             "axes.titlesize": 13,
+            "axes.titlecolor": ACENTO,
             "axes.labelsize": 13,
             "legend.fontsize": 12,
             "xtick.labelsize": 12,

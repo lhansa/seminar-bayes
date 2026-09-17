@@ -15,7 +15,7 @@ Público objetivo: profesionales de datos que manejan Python y regresión, pero 
 
 ```
 index.qmd                         slides de la parte teórica
-custom.scss                       tema de las slides (morado sobre simple)
+custom.scss                       tema de las slides (morado de marca #800080 sobre simple)
 _quarto.yml                       configuración del proyecto Quarto
 src/estilo.py                     estilo común de matplotlib para slides y notebook
 src/mmm.py                        datos y transformaciones del taller (escalado, adstock; Hill sin usar)

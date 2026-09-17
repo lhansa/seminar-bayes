@@ -27,7 +27,7 @@ Para el taller, la fuente de verdad metodológica es el repositorio **`google/me
 
 Las prioris por defecto de Meridian están en `meridian/model/prior_distribution.py`. El taller las usa tal cual **salvo dos**: `sigma` pasa de `HalfNormal(5)` a `Exponential(1)` y `gamma` de `Normal(0, 5)` a `Normal(0, 1)`. En un modelo nacional con 156 semanas y el KPI estandarizado, las de Meridian generan ingresos semanales negativos; el ejercicio 1 lo mide en vez de contarlo. `mu` es el caso interesante y **la diferencia entre los dos modelos no es un descuido**: vale `Normal(0, 1)` en el esqueleto, donde es el nivel de un KPI estandarizado, y `Normal(0, 5)` en el modelo de medios, donde tiene que compensar lo que aportan (su posteriori se va a −2,8; con la priori del esqueleto no llegaría). Ese cambio *es* la lección de la sección 4, así que no lo unifiques ni lo "arregles" comparando con `prior_distribution.py`. `data/meridian_national.csv` es copia literal de su fichero `national_all_channels.csv`.
 
-Para el estilo visual de las slides, la referencia es el repositorio **`ceu-2606`**, también del autor.
+Para el estilo visual de las slides, el punto de partida fue el repositorio **`ceu-2606`**, también del autor: tema `simple`, títulos morados y la sombra dura de las imágenes. De ahí en adelante este repositorio va por delante. El `custom.scss` de `ceu-2606` define una sola variable y deja el resto del cromo en los defaults del tema; el de aquí no, porque el seminario se proyecta con la marca personal (issue #25). No lo "arregles" comparándolo con el de allí: los enlaces, la barra de progreso, el número de slide, la portada y los filetes de tabla son morados a propósito.
 
 ## Cómo son las slides de este autor
 
@@ -43,6 +43,7 @@ Esto es lo que más importa al editar `index.qmd`:
 ## Convenciones técnicas
 
 - Todos los gráficos con matplotlib, aplicando `aplicar_estilo()` de `src/estilo.py`. El color de acento es `ACENTO` (morado `#800080`, el mismo del tema).
+- **El morado `#800080` es el color de marca** y está en dos sitios: como variable `$morado` en `custom.scss` y como `ACENTO` en `src/estilo.py`. Si cambia la marca, se cambia en esos dos y en ninguno más. Dos decisiones que no son olvidos: las slides tienen **fondo blanco también las de sección** (`#`), que se distinguen por un filete bajo el título y no por invertir el fondo, porque al proyectar el blanco gana; y la escala `GRISES` de las figuras **se queda gris**, porque el morado marca lo que importa en cada gráfico y si se moradea la serie entera deja de marcar nada. Lo único de marca en las figuras es el cromo: `REJILLA` y el color del título de los ejes.
 - Semilla fija: `SEMILLA = 42`.
 - Modelos con `pymc`; diagnóstico y HDI con `arviz` (`az.hdi`, `az.summary`, `az.plot_ppc`).
 - Rutas de datos relativas a la raíz del proyecto (`data/radon.csv`), porque Quarto ejecuta desde ahí. El notebook resuelve la raíz por su cuenta.
@@ -65,7 +66,7 @@ quarto preview
 
 `.devcontainer/` levanta ese mismo entorno en un Codespace, y lo hace **todo en `post-create.sh`**, nada en la construcción de la imagen: un build que falla manda el Codespace a modo recuperación, que arranca una imagen ajena (Alpine) y sobrescribe el log en el siguiente arranque, mientras que un fallo en `post-create.sh` deja el contenedor en pie y el error a la vista. Por eso no hay *features* ni `Dockerfile`: solo `base:ubuntu-24.04` —el mismo Ubuntu del runner de Actions, con Python 3.12 de serie— y un script reejecutable que instala `build-essential`, `python3-dev` y `libopenblas-dev` para el backend C de PyTensor, el `.deb` de Quarto con la versión fijada en una variable, `uv` desde su release, y el venv con `requirements.txt`. `QUARTO_PYTHON` apunta a ese venv. Es solo para las slides: el taller va por Colab. `requirements.txt` sigue siendo la única lista de dependencias, así que no hay `pyproject.toml` ni `uv.lock` que mantener en paralelo.
 
-El render ejecuta MCMC: la primera vez tarda un rato (unos 45 s en el runner de Actions; en local, lo que dé la máquina). `freeze: auto` guarda resultados en `_freeze/`, que **no se commitea**: el workflow de Pages cachea ese directorio por su cuenta, en el paso `Restore Quarto freeze cache` de `.github/workflows/publish.yml`.
+El render ejecuta MCMC: la primera vez tarda un rato (unos 45 s en el runner de Actions; en local, lo que dé la máquina). `freeze: auto` guarda resultados en `_freeze/`, que **no se commitea**: el workflow de Pages cachea ese directorio por su cuenta, en el paso `Restore Quarto freeze cache` de `.github/workflows/publish.yml`. Ese paso **no tiene `restore-keys` a propósito**, y tampoco lo necesita: Quarto invalida `_freeze/` por el hash del código de la celda, no por lo que la celda importa, así que un cambio en `src/` no lo toca y una caché restaurada por prefijo publicaría las figuras viejas. Por lo mismo, **si tocas `src/estilo.py` borra `_freeze/` en local** antes de volver a renderizar, o no verás el cambio.
 
 ## Al terminar un cambio
 
