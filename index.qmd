@@ -29,6 +29,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from scipy.stats import gaussian_kde
+
 import statsmodels.api as sm
 import pymc as pm
 import arviz as az
@@ -344,21 +346,33 @@ n_condados = df["county_code"].nunique()
 ## El sótano da niveles más altos que la planta baja
 
 ```{python}
-#| label: graf-boxplot-floor
+#| label: graf-densidad-floor
+
+# Las dos distribuciones enteras, apiladas: con 766 mediciones en sótano y 153 en planta
+# baja, cualquier recuento sin normalizar aplastaría al segundo grupo.
+grupos = [
+    ("Planta baja", df.loc[df["floor"] == 1, "log_radon"].values),
+    ("Sótano", df.loc[df["floor"] == 0, "log_radon"].values),
+]
+
+rejilla = np.linspace(-3, 4.5, 400)
 
 fig, ax = plt.subplots(figsize=(7, 4))
-bp = ax.boxplot(
-    [df.loc[df["floor"] == 0, "log_radon"], df.loc[df["floor"] == 1, "log_radon"]],
-    tick_labels=["Sótano", "Planta baja"],
-    patch_artist=True,
-    boxprops=dict(facecolor="white", edgecolor="black", linewidth=1),
-    medianprops=dict(color=ACENTO, linewidth=2),
-    whiskerprops=dict(color="black", linestyle="--"),
-    capprops=dict(color="black"),
-    flierprops=dict(marker="o", markerfacecolor="white", markeredgecolor="black", markersize=4),
-)
-bp["boxes"][1].set_hatch("///")
-ax.set_ylabel("log(radón)")
+for i, (nombre, valores) in enumerate(grupos):
+    densidad = gaussian_kde(valores)(rejilla)
+    densidad = densidad / densidad.max() * 0.85
+    ax.fill_between(rejilla, i, i + densidad, color=GRISES[2 - i], alpha=0.75, zorder=2 - i)
+    ax.plot(rejilla, i + densidad, color="black", linewidth=1, zorder=2 - i)
+
+    mediana = np.median(valores)
+    ax.vlines(mediana, i, i + np.interp(mediana, rejilla, densidad), color=ACENTO,
+              linewidth=2.5, zorder=3)
+
+ax.set_yticks([i + 0.1 for i in range(len(grupos))])
+ax.set_yticklabels([nombre for nombre, _ in grupos])
+ax.set_xlabel("log(radón)")
+ax.set_ylim(-0.1, 2.1)
+ax.grid(axis="y", visible=False)
 plt.show()
 ```
 
