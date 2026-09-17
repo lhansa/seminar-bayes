@@ -486,10 +486,11 @@ La diferencia no está en el punto central. Está en lo que te llevas además de
 
 # Modelo 2: un nivel propio por condado
 
-## Cada condado se estima solo, y al que tiene una medición se le dispara el intervalo
+## Cada condado se estima solo...
 
 ```{python}
 #| label: modelo-unpooled
+#| echo: true
 
 with pm.Model() as modelo_unpooled:
     alpha = pm.Normal("alpha", mu=0, sigma=2, shape=n_condados)  # sin nada en común
@@ -502,6 +503,14 @@ with pm.Model() as modelo_unpooled:
 
     idata_unpooled = pm.sample(draws=1000, tune=1000, random_seed=SEMILLA, progressbar=False)
 ```
+
+::: aside
+
+La única diferencia es ese `shape=n_condados` en la priori de `alpha`.
+
+:::
+
+## ...y con pocas mediciones, se dispara la incertidumbre
 
 ```{python}
 #| label: fig-unpooled
@@ -527,11 +536,9 @@ ax.set_yticks([])
 plt.show()
 ```
 
-Un `alpha` por condado (`shape=n_condados`) y cada uno por su cuenta: tenga 116 mediciones o tenga una.
-
 # Modelo 3: los condados se prestan información
 
-## Los interceptos salen de una distribución común
+## Los intercepts salen de una distribución común
 
 $$
 \begin{aligned}
@@ -765,7 +772,7 @@ Nada de esto elimina la incertidumbre. La ordena.
 
 ## Para profundizar
 
-- Gelman, Hill y Vehtari, *Regression and Other Stories*
+- Gelman y Hill, *Data Analysis Using Regression and Multilevel/Hierarchical Models*
 - McElreath, *Statistical Rethinking*
 
 # Segunda parte: taller
