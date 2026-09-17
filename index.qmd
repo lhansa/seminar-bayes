@@ -387,6 +387,7 @@ pd.DataFrame(
         "Error estándar": ols.bse.round(3),
         "IC 2,5%": ols.conf_int()[0].round(3),
         "IC 97,5%": ols.conf_int()[1].round(3),
+        "p-valor": ols.pvalues.round(3)
     }
 )
 ```
@@ -401,6 +402,40 @@ $$
 #| label: modelo-agrupado
 #| echo: true
 
+with pm.Model() as modelo_agrupado:
+    alpha = pm.Normal("alpha", mu=0, sigma=2)
+    beta1 = pm.Normal("beta1", mu=0, sigma=1)
+    sigma = pm.Exponential("sigma", 1)
+
+    y_obs = pm.Normal("y_obs", mu=alpha + beta1 * floor, sigma=sigma, observed=log_radon)
+
+    idata = pm.sample(draws=1000, tune=1000, random_seed=SEMILLA, progressbar=False)
+```
+
+## Tenemos prioris
+
+```{python}
+#| label: modelo-agrupado-1
+#| echo: true
+#| eval: false
+#| code-line-numbers: "2-4"
+with pm.Model() as modelo_agrupado:
+    alpha = pm.Normal("alpha", mu=0, sigma=2)
+    beta1 = pm.Normal("beta1", mu=0, sigma=1)
+    sigma = pm.Exponential("sigma", 1)
+
+    y_obs = pm.Normal("y_obs", mu=alpha + beta1 * floor, sigma=sigma, observed=log_radon)
+
+    idata = pm.sample(draws=1000, tune=1000, random_seed=SEMILLA, progressbar=False)
+```
+
+## Datos y verosimilitud
+
+```{python}
+#| label: modelo-agrupado-2
+#| echo: true
+#| eval: false
+#| code-line-numbers: "6"
 with pm.Model() as modelo_agrupado:
     alpha = pm.Normal("alpha", mu=0, sigma=2)
     beta1 = pm.Normal("beta1", mu=0, sigma=1)
