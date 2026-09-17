@@ -256,6 +256,106 @@ ax.legend()
 plt.show()
 ```
 
+## Esa distribución no se ha calculado: se ha recorrido
+
+```{python}
+#| label: graf-caminata
+
+rng_mcmc = np.random.default_rng(SEMILLA)
+
+
+def log_numerador(p):
+    """El numerador de Bayes: priori uniforme por verosimilitud binomial, en logaritmos."""
+    if not 0 < p < 1:
+        return -np.inf
+    return caras_obs * np.log(p) + (n_lanzamientos - caras_obs) * np.log(1 - p)
+
+
+n_pasos = 2000
+subida = 50
+cadena = np.empty(n_pasos)
+
+actual = 0.10  # arranque deliberadamente malo: la cadena no sabe nada
+for i in range(n_pasos):
+    propuesta = actual + rng_mcmc.normal(0, 0.05)
+    if np.log(rng_mcmc.uniform()) < log_numerador(propuesta) - log_numerador(actual):
+        actual = propuesta
+    cadena[i] = actual
+
+
+def dibuja_recorrido(ax):
+    ax.axvspan(0, subida, color="#DDDDDD", alpha=0.7, zorder=0,
+               label="Subida inicial (descartada)")
+    ax.plot(cadena, color=GRISES[1], linewidth=0.8)
+    ax.axhline(0.6, color=ACENTO, linewidth=2, label="p observado = 0,60")
+    ax.set_xlabel("Paso")
+    ax.set_ylabel("p (probabilidad de cara)")
+    ax.set_ylim(0, 0.8)
+    ax.legend(loc="lower right")
+
+
+fig, ax = plt.subplots(figsize=(9, 4))
+dibuja_recorrido(ax)
+plt.show()
+```
+
+::: {.notes}
+La regla, en cuatro frases: estás en un valor de $p$, propones otro cercano, miras cuántas
+veces más plausible es —priori por verosimilitud, nada más— y si es mejor, te mueves; si es
+peor, te mueves con esa probabilidad. Dos mil veces.
+
+El arranque en 0,10 es a propósito: la cadena no sabe nada cuando empieza, y los primeros
+pasos son subida, no muestreo. Eso es el `tune=1000` de la slide del modelo, que PyMC usa
+para colocarse y luego tira; es la zona sombreada.
+
+Y la línea de honestidad, que hay que decirla: PyMC no hace exactamente esto, hace NUTS, que
+propone usando el gradiente y es mucho más listo. La idea de fondo es la misma.
+:::
+
+## El montón que deja el paseo es la posteriori
+
+```{python}
+#| label: graf-caminata-posteriori
+
+fig, (ax1, ax2) = plt.subplots(
+    1, 2, figsize=(9, 4), sharey=True, gridspec_kw={"width_ratios": [3, 1]}
+)
+
+dibuja_recorrido(ax1)
+
+ax2.hist(
+    cadena[subida:], bins=40, density=True, orientation="horizontal",
+    color="#666666", edgecolor="white", alpha=0.85,
+)
+ax2.axhline(0.6, color=ACENTO, linewidth=2)
+ax2.set_xlabel("Densidad")
+ax2.set_xticks([])
+
+plt.tight_layout()
+plt.show()
+```
+
+::: aside
+Muestrear solo necesita el numerador: $P(p \mid \text{datos}) \propto P(\text{datos} \mid p) \cdot P(p)$. Al comparar dos valores de $p$, $P(\text{datos})$ se cancela. Esa integral no la hemos calculado nunca.
+:::
+
+::: {.notes}
+Aquí está el truco entero: como el paso se acepta según la plausibilidad relativa, la cadena
+acaba pasando en cada zona un tiempo proporcional a lo plausible que es esa zona. El recuento
+de visitas no se parece a la posteriori: es la posteriori. Y no se ha resuelto ninguna
+integral por el camino.
+
+De ahí el aside. Para decidir si me muevo solo comparo dos valores de $p$, y en esa
+comparación la constante normalizadora —la misma $P(\text{datos})$ de la tabla de hace un
+rato— aparece arriba y abajo y se va. Eso es justo lo que hace posible el muestreo: esa
+integral es la que no sabemos calcular en cuanto el modelo tiene más de dos parámetros.
+
+Referencia y parar: McElreath, *Statistical Rethinking* —el capítulo del rey Markov— y sus
+clases en YouTube, que están enteras y gratis. Nada de balance detallado ni de ergodicidad,
+que son otras dos horas. Son tres o cuatro minutos: si alguien pregunta cómo se sabe que la
+cadena ha funcionado, que la traza y el `r_hat` llegan en el bloque del radón.
+:::
+
 ## Y ahora la pregunta original se responde contando
 
 ```{python}
@@ -819,7 +919,7 @@ Nada de esto elimina la incertidumbre. La ordena.
 ## Para profundizar
 
 - Gelman y Hill, *Data Analysis Using Regression and Multilevel/Hierarchical Models*
-- McElreath, *Statistical Rethinking*
+- McElreath, *Statistical Rethinking*, libro y sus clases en YouTube
 
 # Segunda parte: taller
 
