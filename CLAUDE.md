@@ -19,6 +19,8 @@ El guion de la parte teórica sale de `cartas/01-inferencia-estadistica/carta.qm
 
 Las slides **no siguen la carta al pie de la letra**, y las diferencias son decisiones tomadas, no olvidos: la anécdota de Obama con la que abre la carta se ha quitado (las slides empiezan con la moneda), la moneda se resuelve solo por simulación (fuera la aproximación normal y el binomial exacto) y la comprobación predictiva previa se cuenta de palabra, sin gráfico, porque el taller la hace entera. No las restaures por parecerse más a la carta.
 
+**Las dos slides del muestreo (issue #29) llevan un Metropolis a mano, en numpy, y es a propósito.** No se sustituye por la cadena de `idata_moneda`: NUTS da muestras casi independientes, así que su recorrido parece ruido blanco y no se ve ni un paso corto ni un rechazo, que es justo lo que ahí se cuenta de palabra. Por lo mismo, la primera de las dos enseña solo los `zoom = 200` primeros pasos de los dos mil —con los dos mil no se distingue ninguno— y la segunda sí los enseña todos, porque ahí lo que importa ya no es el paso sino el montón. Una nota del ponente avisa de que PyMC usa NUTS y no esto. La posteriori exacta (una Beta) se queda fuera, como el binomial exacto: el aside da la forma proporcional de Bayes, que es lo que explica por qué se puede muestrear sin la constante normalizadora.
+
 `data/radon.csv` es copia del que hay en ese repositorio.
 
 Para el taller, la fuente de verdad metodológica es el repositorio **`google/meridian`** (Apache 2.0): escalado del KPI y de los medios, adstock geométrico normalizado y, sobre todo, la priori sobre el ROI de la que se deduce `beta`. Si hay que ampliar el taller, se mira su código (`meridian/model/`), no la memoria.
