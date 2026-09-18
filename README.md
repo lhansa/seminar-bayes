@@ -58,7 +58,7 @@ quarto preview         # recarga en caliente mientras editas
 
 El render ejecuta varios modelos de pymc con `draws=2000, tune=2000, chains=4`, así que la primera vez tarda minutos, no segundos. Está bien que tarde: las slides se proyectan ya renderizadas, y el muestreo no se baja para ahorrar CI. El proyecto usa `freeze: auto`: mientras no cambie el código de una celda, Quarto reutiliza el resultado guardado en `_freeze/`.
 
-**`_freeze/` no se commitea.** El workflow de publicación cachea ese directorio entre ejecuciones, así que tampoco vuelve a muestrear salvo que cambie el código de una celda o caduque la caché.
+**`_freeze/` no se commitea.** Los workflows de publicación y de comprobación cachean ese directorio entre ejecuciones, así que tampoco vuelven a muestrear salvo que cambie el código de una celda o caduque la caché.
 
 ## Las slides en un Codespace
 
@@ -76,6 +76,8 @@ La versión de Quarto va fijada en una variable al principio de `post-create.sh`
 ## Publicación
 
 `.github/workflows/publish.yml` renderiza y despliega a GitHub Pages en cada push a `main`. Requiere tener configurado, en *Settings → Pages*, el origen **GitHub Actions**.
+
+`.github/workflows/check-render.yml` hace lo primero y no lo segundo: renderiza en cada PR contra `main` y falla si el render falla, para que una charla que no renderiza se descubra antes de mergear y no cuando Pages ya se ha quedado sin publicar. Monta el mismo entorno que `publish.yml` y restaura la misma caché de `_freeze/`, así que con la caché caliente tarda poco; cuando cambia el código de una celda hay que esperar al MCMC. Sube `_site/` como artefacto de la ejecución, por si conviene mirar una slide sin renderizar en local.
 
 ## Datos
 

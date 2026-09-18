@@ -1,5 +1,8 @@
 name: Publish slides
 
+# El job `build` es el que clona check-render.yml para comprobar el render en las PR.
+# Si cambia el entorno de aquí (Python, dependencias del sistema, Quarto, la caché de
+# _freeze/), cambia también el de allí, o la PR saldrá verde y el merge rojo.
 on:
   push:
     branches: [main]

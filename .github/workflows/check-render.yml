@@ -1,0 +1,73 @@
+name: Check render
+
+# Comprueba que `quarto render` sigue funcionando ANTES de mergear, no después.
+# publish.yml solo se dispara con push a main: sin esto, una PR que rompe el render
+# se descubre cuando Pages ya se ha quedado sin publicar.
+#
+# No publica nada: renderiza y falla si el render falla.
+on:
+  pull_request:
+    branches: [main]
+
+# Sin `pages: write` ni `id-token: write` a propósito: este workflow no despliega,
+# así que tampoco puede.
+permissions:
+  contents: read
+
+# Un push nuevo a la PR cancela el render anterior: el MCMC es caro y el resultado
+# de la versión vieja ya no interesa.
+concurrency:
+  group: check-render-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # A partir de aquí, el entorno es el mismo que el del job `build` de publish.yml.
+      # Si se cambia allí, se cambia aquí: un verde en la PR y un rojo al mergear es
+      # justo lo que este workflow existe para evitar.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install system dependencies (backend C de PyTensor)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc g++ libopenblas-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      # Misma clave que publish.yml, y **sin `restore-keys`** por el mismo motivo:
+      # Quarto invalida _freeze/ por el hash del código de la celda, no por lo que esa
+      # celda importa, así que una caché restaurada por prefijo daría verde con las
+      # figuras viejas. La PR lee la caché que dejó main; lo que escriba se queda en el
+      # ámbito de su rama, así que un segundo push a la misma PR no vuelve a muestrear.
+      - name: Restore Quarto freeze cache
+        uses: actions/cache@v4
+        with:
+          path: _freeze
+          key: freeze-${{ hashFiles('index.qmd', 'src/**', 'requirements.txt') }}
+
+      - name: Render slides
+        run: quarto render
+
+      # Para mirar una slide sin renderizar en local.
+      - name: Upload rendered site
+        uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: _site
+          retention-days: 7
