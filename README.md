@@ -22,7 +22,7 @@ index_radon.qmd                   slides del formato anterior, archivadas
 custom.scss                       tema de las slides (morado de marca #800080 sobre simple)
 _quarto.yml                       configuración del proyecto Quarto
 src/estilo.py                     estilo común de matplotlib para las slides
-data/radon.csv                    919 mediciones de radón en Minnesota (Gelman)
+data/radon.csv                    919 mediciones de radón en Minnesota, de Gelman (copia offline; el notebook las lee por URL)
 data/meridian_national.csv        156 semanas de marketing mix simuladas por Google (copia offline; el material las lee por URL)
 notebooks/radon.ipynb             el recorrido del radón, narrativo y sin ejercicios (por escribir)
 notebooks/taller.ipynb            taller archivado
@@ -34,7 +34,7 @@ img/                              favicon, logo y QR
 
 ## Antes de la sesión
 
-Quarto solo hace falta para las slides. `notebooks/radon.ipynb` se ejecuta con el repositorio clonado y el entorno de `requirements.txt`: lee `data/radon.csv` por ruta relativa, así que no vale abrirlo suelto en Colab.
+Quarto solo hace falta para las slides. Los notebooks son autosuficientes: leen los datos por URL y su primera celda instala lo que necesitan, así que se abren en Colab sin clonar nada. En local basta con Python y `requirements.txt`.
 
 Las versiones van fijadas a propósito: `pymc 6` exige `arviz 1.x`, que cambia la API de `az.summary`, `az.plot_ppc` y compañía, y este material está escrito contra `arviz 0.x`.
 
@@ -69,7 +69,7 @@ quarto render                  # genera _site/
 quarto preview --port 4200     # ese puerto ya viene reenviado
 ```
 
-Los terminales nuevos arrancan con el venv activado, y Quarto usa su intérprete aunque no lo esté: `QUARTO_PYTHON` apunta a `.venv/bin/python`. Ese mismo entorno sirve para `notebooks/radon.ipynb`.
+Los terminales nuevos arrancan con el venv activado, y Quarto usa su intérprete aunque no lo esté: `QUARTO_PYTHON` apunta a `.venv/bin/python`. Ese mismo entorno sirve para los notebooks, que por lo demás se abren en Colab sin necesidad de Codespace.
 
 La versión de Quarto va fijada en una variable al principio de `post-create.sh`; para actualizarla, esa línea y nada más. Si algo falla durante la creación, el contenedor arranca igual y el error se lee en el terminal: el script se puede relanzar con `bash .devcontainer/post-create.sh` tantas veces como haga falta.
 
@@ -79,7 +79,7 @@ La versión de Quarto va fijada en una variable al principio de `post-create.sh`
 
 ## Datos
 
-`data/radon.csv` es el conjunto de radón de Minnesota que usan Gelman y Hill, copiado del repositorio `estadistica-correspondencia`. Lo leen `notebooks/radon.ipynb` y las slides archivadas. Columnas relevantes: `log_radon`, `floor` (0 = sótano, 1 = planta baja), `county` y `county_code`.
+`data/radon.csv` es el conjunto de radón de Minnesota que usan Gelman y Hill, copiado del repositorio `estadistica-correspondencia`. Columnas relevantes: `log_radon`, `floor` (0 = sótano, 1 = planta baja), `county` y `county_code`. Lo leen las slides archivadas; `notebooks/radon.ipynb` no lee esta copia, sino la del repositorio [`pymc-devs/pymc-examples`](https://github.com/pymc-devs/pymc-examples), fijando el tag `2026.02.0`, que sirve un fichero idéntico. La copia se queda aquí como red de seguridad offline.
 
 `data/meridian_national.csv` es el conjunto simulado de Google Meridian (Apache 2.0) del seminario: 156 semanas, cinco canales de pago con impresiones e inversión, dos controles y las conversiones. Detalle de las columnas en [`data/README.md`](data/README.md). El material no lee esta copia: descarga los datos del repositorio de Meridian fijando el tag `v1.1.5`, que sirve un fichero idéntico. La copia se queda aquí como red de seguridad si algún día esa URL deja de responder.
 

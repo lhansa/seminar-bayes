@@ -28,7 +28,7 @@ Se queda en el repositorio y **no se toca** salvo que un issue lo pida. Es la ca
 - `notebooks/taller.ipynb` y `notebooks/taller-solucion.ipynb`: el taller de Meridian que ya no se imparte. De aquí sale el código de los bloques 2 y 3, el modelo de medios incluido.
 - `notebooks/idata/modelo_meridian.nc`.
 
-`data/radon.csv` **no** es material archivado: lo lee `notebooks/radon.ipynb`.
+`data/radon.csv` no es material archivado, pero tampoco lo lee nadie: es la copia offline del fichero que `notebooks/radon.ipynb` descarga por URL.
 
 Nada de eso entra en `_quarto.yml`.
 
@@ -66,7 +66,7 @@ Esto es lo que más importa al editar `index.qmd`:
 ## Convenciones técnicas
 
 - Todos los gráficos con matplotlib. Las **slides** aplican `aplicar_estilo()` de `src/estilo.py`; los **notebooks** llevan su propio bloque de `rcParams` en `celda-01`, que es la versión corta del mismo estilo, porque tienen que funcionar en Colab sin clonar el repositorio. El color de acento es `ACENTO` (morado `#800080`, el mismo del tema).
-- **El morado `#800080` es el color de marca** y está en cinco sitios: `$morado` en `custom.scss`, `ACENTO` en `src/estilo.py` y `ACENTO` en la primera celda de cada uno de los tres notebooks. Si cambia la marca, se cambia ahí y en ningún sitio más. Las copias de fuera del `.scss` son el precio de que los notebooks no dependan de `src/` —el taller archivado porque se abre en Colab sin clonar nada, el del radón para no tocar `sys.path` desde `notebooks/`—, y es un precio aceptado.
+- **El morado `#800080` es el color de marca** y está en cinco sitios: `$morado` en `custom.scss`, `ACENTO` en `src/estilo.py` y `ACENTO` en la primera celda de cada uno de los tres notebooks. Si cambia la marca, se cambia ahí y en ningún sitio más. Las copias de fuera del `.scss` son el precio de que los tres notebooks sean autosuficientes en Colab, y es un precio aceptado.
 - Dos decisiones que no son olvidos: las slides tienen **fondo blanco también las de sección** (`#`), que se distinguen por un filete bajo el título, porque al proyectar el blanco gana; y la escala `GRISES` de las figuras **se queda gris**, porque el morado marca lo que importa en cada gráfico y si se moradea la serie entera deja de marcar nada. Lo único de marca en las figuras es el cromo: `REJILLA` y el color del título de los ejes.
 - El estilo visual salió del repositorio **`ceu-2606`**, también del autor (tema `simple`, títulos morados, sombra dura en las imágenes), pero de ahí en adelante este repositorio va por delante: su `custom.scss` deja el cromo en los defaults del tema y el de aquí no, porque el seminario se proyecta con la marca personal (issue #25). Los enlaces, la barra de progreso, la portada y los filetes de tabla son morados a propósito.
 - El contador de slide se quitó (issue #27): `slide-number` va a `false` en el frontmatter **y** en `_quarto.yml`, porque está duplicado y gana el primero. `custom.scss` ya no lo estiliza; no lo devuelvas.
@@ -82,8 +82,10 @@ Esto es lo que más importa al editar `index.qmd`:
 `notebooks/radon.ipynb` **no es material de la charla**: es el regalo de suscripción. Recorre el radón de Minnesota (agrupado → *unpooled* → jerárquico), el mismo camino que `index_radon.qmd`, y existe para grabar un vídeo con él ya ejecutado.
 
 - Es **narrativo y sin ejercicios**. No hay celdas `# Tu código aquí`, no hay notebook de soluciones y no hay pareja que mantener sincronizada: lo que en el taller archivado es un ejercicio, aquí es texto que responde a la pregunta. No copies la estructura del taller.
-- Lee `data/radon.csv` **por ruta relativa** (`../data/radon.csv` desde `notebooks/`), no por URL. Se ejecuta con el repositorio clonado delante, así que **no es autosuficiente en Colab** y no lleva celda de instalación: el entorno es `requirements.txt`.
-- Lleva su propio bloque de `rcParams` en la primera celda, la versión corta del estilo de `src/estilo.py`, con `ACENTO` y `GRISES`. No importa nada de `src/` ni toca `sys.path`: desde `notebooks/` eso serían tres líneas de fontanería para ahorrar diez de estilo.
+- Los datos se leen **por URL**, del repositorio `pymc-devs/pymc-examples`, fijando el tag `2026.02.0`:
+  `raw.githubusercontent.com/pymc-devs/pymc-examples/2026.02.0/examples/data/radon.csv`. Mismo criterio que con Meridian: **no lo cambies a `main`**. Ese tag sirve un fichero byte a byte idéntico a `data/radon.csv`, que se queda como red de seguridad offline.
+- Por eso es **autosuficiente en Colab**, igual que el taller archivado: la primera celda detecta Colab e instala `numpy`, `pymc` y `arviz` con los topes de `requirements.txt`, y nada más. No clona el repositorio, no hace `%cd`, no toca `sys.path` y no importa nada de `src/`. Debe poder ejecutarse desde cualquier directorio.
+- Lleva su propio bloque de `rcParams` en la celda de imports, la versión corta del estilo de `src/estilo.py`, con `ACENTO` y `GRISES`.
 - `SEMILLA = 42`, modelos con `pymc`, diagnóstico con `arviz`, como el resto del material.
 - Se commitea **sin outputs**, igual que los del taller. El vídeo se graba ejecutándolo; el repositorio no guarda esa ejecución.
 - Fuera de `_quarto.yml`: no se publica con las slides.
