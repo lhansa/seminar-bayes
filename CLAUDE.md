@@ -111,9 +111,11 @@ quarto preview
 
 El render ejecuta MCMC, así que la primera vez tarda un rato. `freeze: auto` guarda resultados en `_freeze/`, que **no se commitea**: el workflow de Pages cachea ese directorio en el paso `Restore Quarto freeze cache` de `.github/workflows/publish.yml`. Ese paso **no tiene `restore-keys` a propósito**, y tampoco lo necesita: Quarto invalida `_freeze/` por el hash del código de la celda, no por lo que la celda importa, así que un cambio en `src/` no lo toca y una caché restaurada por prefijo publicaría las figuras viejas. Por lo mismo, **si tocas `src/estilo.py` borra `_freeze/` en local** antes de volver a renderizar, o no verás el cambio.
 
+**El render se comprueba en cada PR** (issue #48): `.github/workflows/check-render.yml` se dispara con `pull_request` contra `main`, renderiza y falla si el render falla. No despliega —no tiene permisos de Pages— y sube `_site/` como artefacto de la ejecución. Es un clon del job `build` de `publish.yml`: mismo Ubuntu, mismo Python, mismo `requirements.txt`, misma acción de Quarto y **la misma clave de caché, también sin `restore-keys`**, por lo mismo de arriba. Si tocas el entorno de uno, toca el del otro: un verde en la PR y un rojo al mergear es justo lo que ese workflow existe para evitar. Cuando cambie el código de una celda, la comprobación tardará minutos; es el precio, y está aceptado.
+
 ## Al terminar un cambio
 
-- Si tocas el código de una celda, vuelve a renderizar: `_freeze/` queda obsoleto para esa celda.
+- Si tocas el código de una celda, vuelve a renderizar: `_freeze/` queda obsoleto para esa celda. La PR lo comprueba igualmente, pero en CI el MCMC se paga entero.
 - Si añades dependencias, actualiza `requirements.txt`.
 - Si cambias la estructura, actualiza `README.md` y este fichero.
 - La PR se escribe sobre `.github/pull_request_template.md` y **empieza por `Fixes #NN`**. La palabra clave va en inglés (`Fixes`, `Closes`, `Resolves`): con "Cierra #NN" el issue se queda abierto después del merge, porque GitHub no la reconoce. Si la PR cierra varios issues, cada uno lleva la suya: `Fixes #12, closes #13`.
