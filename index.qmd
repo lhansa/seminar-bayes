@@ -532,3 +532,179 @@ correlaciones.round(2)
 
 - Las preguntas que importan no se responden con un p-valor.
 - Y ya sabemos, por la moneda, que hay otra manera.
+
+# El esqueleto: nivel y controles del KPI
+
+## Quito los medios y quedan tres parámetros que decidir
+
+```{python}
+#| label: modelo-esqueleto
+#| echo: true
+
+y = df["revenue"].to_numpy()
+z = df[CONTROLES].to_numpy(float)
+semanas = df["time"].dt.date.astype(str)
+
+y_media, y_sd = y.mean(), y.std()
+y_esc = (y - y_media) / y_sd
+z_esc = (z - z.mean(axis=0)) / z.std(axis=0)
+
+with pm.Model(coords={"control": CONTROLES, "semana": semanas}) as esqueleto:
+    mu = pm.Normal("mu", 0.0, 1.0)
+    gamma = pm.Normal("gamma", 0.0, 1.0, dims="control")
+    sigma = pm.Exponential("sigma", 1.0)
+
+    media = mu + pt.dot(z_esc, gamma)
+    pm.Normal("y", mu=media, sigma=sigma, observed=y_esc, dims="semana")
+```
+
+## `mu` es el nivel del KPI; `gamma`, cuánto lo mueve cada control
+
+- El KPI está estandarizado: media cero, desviación típica uno. `mu` es justo eso, su nivel.
+- Los controles también lo están: `gamma_c` es cuánto sube el KPI cuando ese control sube una desviación típica.
+- `sigma` es lo que el modelo no explica, en esas mismas unidades.
+
+::: aside
+Todas las prioris de este bloque están escritas en esta escala. Si cambia el escalado, cambia el modelo.
+:::
+
+## Y esto no se afirma: se simula antes de mirar los datos
+
+```{python}
+#| label: prev-esqueleto
+#| include: false
+
+def construir_esqueleto(mu_sd=1.0, gamma_sd=1.0, sigma_prior="exp"):
+    """El esqueleto con las prioris como argumentos, para poder compararlas."""
+    with pm.Model(coords={"control": CONTROLES, "semana": semanas}) as modelo:
+        mu = pm.Normal("mu", 0.0, mu_sd)
+        gamma = pm.Normal("gamma", 0.0, gamma_sd, dims="control")
+        if sigma_prior == "exp":
+            sigma = pm.Exponential("sigma", 1.0)
+        else:
+            sigma = pm.HalfNormal("sigma", 5.0)
+
+        media = mu + pt.dot(z_esc, gamma)
+        pm.Normal("y", mu=media, sigma=sigma, observed=y_esc, dims="semana")
+    return modelo
+
+
+def ingresos_previos(modelo, draws=500):
+    """Simula series de ingresos desde la priori y las devuelve en euros."""
+    with modelo:
+        previa = pm.sample_prior_predictive(draws=draws, random_seed=SEMILLA)
+    return previa.prior_predictive["y"].values.reshape(-1, len(df)) * y_sd + y_media
+```
+
+```{python}
+#| label: graf-previa-esqueleto
+
+y_previo = ingresos_previos(esqueleto)
+
+fig, eje = plt.subplots(figsize=(9, 4))
+eje.hist(y_previo.ravel() / 1e6, bins=80, color="#AAAAAA", density=True,
+         label="simulado desde la priori")
+eje.hist(y / 1e6, bins=30, color=ACENTO, density=True, alpha=0.8, label="observado")
+eje.set_xlabel("Ingresos semanales (M€)")
+eje.set_ylabel("Densidad")
+eje.legend()
+plt.show()
+```
+
+## Con las prioris que trae Meridian, hay semanas de ingresos negativos
+
+```{python}
+#| label: graf-previa-meridian
+
+meridian = construir_esqueleto(mu_sd=5.0, gamma_sd=5.0, sigma_prior="halfnormal")
+y_meridian = ingresos_previos(meridian)
+pct_negativas_meridian = 100 * (y_meridian < 0).mean()
+
+fig, eje = plt.subplots(figsize=(9, 4))
+eje.hist(y_meridian.ravel() / 1e6, bins=80, color="#AAAAAA", density=True,
+         label="simulado con las prioris de Meridian")
+eje.hist(y / 1e6, bins=30, color=ACENTO, density=True, alpha=0.8, label="observado")
+eje.axvline(0, color="black", linestyle="--", linewidth=1.2)
+eje.set_xlabel("Ingresos semanales (M€)")
+eje.set_ylabel("Densidad")
+eje.legend()
+plt.show()
+```
+
+El `{python} f"{pct_negativas_meridian:.1f}"` % de las semanas simuladas factura menos que nada.
+
+::: aside
+Meridian usa `mu, gamma ~ Normal(0, 5)` y `sigma ~ HalfNormal(5)`. Aquí, `Normal(0, 1)` y `Exponential(1)`.
+:::
+
+::: {.notes}
+Las prioris de Meridian no son un error: su modelo es jerárquico por regiones, con miles de
+observaciones repartidas por geografías, y ahí los datos las tapan. Aquí hay 156 semanas y una
+sola serie: no las tapan, y una empresa vendiendo menos que nada varias semanas al año es lo
+que el modelo se cree antes de mirar un solo dato.
+:::
+
+## Se ajusta en tres segundos
+
+```{python}
+#| label: ajuste-esqueleto
+#| echo: true
+
+with esqueleto:
+    idata_esqueleto = pm.sample(
+        draws=2000, tune=2000, chains=4, target_accept=0.9,
+        random_seed=SEMILLA, progressbar=False,
+    )
+```
+
+```{python}
+#| label: ppc-esqueleto-datos
+#| include: false
+
+with esqueleto:
+    idata_esqueleto.extend(pm.sample_posterior_predictive(idata_esqueleto, random_seed=SEMILLA))
+
+resumen_esqueleto = az.summary(idata_esqueleto, var_names=["mu", "gamma", "sigma"])
+divergencias_esqueleto = int(idata_esqueleto.sample_stats["diverging"].sum())
+```
+
+## Antes de leer la posteriori, miro si el muestreador ha funcionado
+
+```{python}
+#| label: graf-traza-esqueleto
+
+az.plot_trace(idata_esqueleto, var_names=["mu", "gamma", "sigma"], compact=True)
+plt.tight_layout()
+plt.show()
+```
+
+- `r_hat` máximo: `{python} f"{resumen_esqueleto['r_hat'].max():.2f}"`.
+- `ess_bulk` mínimo: `{python} int(resumen_esqueleto['ess_bulk'].min())`.
+- Divergencias: `{python} divergencias_esqueleto`.
+
+## El modelo reproduce los datos que ha visto
+
+```{python}
+#| label: graf-ppc-esqueleto
+
+az.plot_ppc(idata_esqueleto, num_pp_samples=100, colors=[ACENTO, "#7A7A7A", "black"])
+plt.show()
+```
+
+## Lo que este modelo no sabe hacer
+
+```{python}
+#| label: varianza-esqueleto
+#| include: false
+
+sigma_esqueleto = float(idata_esqueleto.posterior["sigma"].mean())
+varianza_explicada_esqueleto = 1 - sigma_esqueleto ** 2
+```
+
+- Explica el `{python} f"{100 * varianza_explicada_esqueleto:.0f}"` % de la varianza del KPI. El resto sigue sin explicación.
+- No tiene ni un canal de publicidad dentro.
+- Así que no responde la pregunta por la que estamos aquí: cuánto vende cada euro invertido.
+
+::: aside
+El siguiente bloque le mete los medios.
+:::
