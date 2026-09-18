@@ -4,11 +4,13 @@
 
 Material del seminario **"Inferencia bayesiana en la empresa"**, una hora sobre los datos de *marketing mix* simulados por [Google Meridian](https://github.com/google/meridian).
 
-Las slides se publican en GitHub Pages. El recorrido: la moneda (60 caras en 100 tiradas, frecuentista vs. bayesiano, resuelta por simulación), el esqueleto del KPI (nivel y controles), el modelo de medios (adstock geométrico y saturación de Hill) y una discusión final sobre por qué Meridian pone la priori en el ROI y no en los coeficientes. El foco son **las dos cosas que se practican mal**: elegir prioris y defenderlas simulando desde ellas antes de ver los datos, y diagnosticar lo que sale.
+Las slides se publican en GitHub Pages. El recorrido son tres bloques: la moneda (60 caras en 100 tiradas, frecuentista vs. bayesiano, resuelta por simulación), el esqueleto del KPI (nivel y controles) y el modelo de medios (adstock geométrico, con la priori puesta sobre el ROI en lugar de sobre los coeficientes). El foco son **las dos cosas que se practican mal**: elegir prioris y defenderlas simulando desde ellas antes de ver los datos, y diagnosticar lo que sale.
 
 El seminario se está rehaciendo: `index.qmd`, las slides nuevas, está por escribir.
 
-**Material archivado.** Del formato anterior, de dos horas, quedan en el repositorio y sin tocar las slides de teoría ([`index_radon.qmd`](index_radon.qmd): moneda y radón de Minnesota, agrupado → *unpooled* → jerárquico) y el taller de Meridian ([`notebooks/taller.ipynb`](notebooks/taller.ipynb), con los seis ejercicios resueltos en [`notebooks/taller-solucion.ipynb`](notebooks/taller-solucion.ipynb)). Nada de eso se publica con las slides.
+Aparte de las slides habrá un notebook, `notebooks/radon.ipynb`: el recorrido del radón de Minnesota (agrupado → *unpooled* → jerárquico), narrativo y sin ejercicios. No es material de la charla, y también está por escribir.
+
+**Material archivado.** [`index_radon.qmd`](index_radon.qmd), [`notebooks/taller.ipynb`](notebooks/taller.ipynb) y [`notebooks/taller-solucion.ipynb`](notebooks/taller-solucion.ipynb) son del formato anterior, de dos horas: no son material a mantener al día, son cantera de posibles talleres futuros.
 
 Público objetivo: profesionales de datos que manejan Python y regresión, pero no han trabajado con métodos bayesianos.
 
@@ -20,8 +22,9 @@ index_radon.qmd                   slides del formato anterior, archivadas
 custom.scss                       tema de las slides (morado de marca #800080 sobre simple)
 _quarto.yml                       configuración del proyecto Quarto
 src/estilo.py                     estilo común de matplotlib para las slides
-data/radon.csv                    919 mediciones de radón en Minnesota (Gelman), de las slides archivadas
+data/radon.csv                    919 mediciones de radón en Minnesota, de Gelman (copia offline; el notebook las lee por URL)
 data/meridian_national.csv        156 semanas de marketing mix simuladas por Google (copia offline; el material las lee por URL)
+notebooks/radon.ipynb             el recorrido del radón, narrativo y sin ejercicios (por escribir)
 notebooks/taller.ipynb            taller archivado
 notebooks/taller-solucion.ipynb   el taller archivado, con los ejercicios resueltos
 notebooks/idata/                  posteriori del modelo de medios, guardada a mano (no la usa nadie)
@@ -31,11 +34,7 @@ img/                              favicon, logo y QR
 
 ## Antes de la sesión
 
-Hay dos maneras de llegar al taller archivado con el entorno listo. La corta:
-
-**Google Colab.** Abre el badge de arriba, ejecuta la primera celda y ya está. Esa celda instala `numpy`, `pymc` y `arviz` con los mismos topes que `requirements.txt`, y no hace nada más: el notebook es autosuficiente y lee los datos por URL del repositorio de Meridian, así que no clona nada ni importa nada de `src/`. No hace falta cuenta de GitHub ni compilador: el runtime de Colab ya trae `gcc`. Si Colab pide reiniciar el entorno después de instalar, se reinicia y se vuelve a empezar por la primera celda.
-
-**En local.** Lo que viene a continuación. Quarto solo hace falta para las slides; para el taller basta con Python y `requirements.txt`.
+Quarto solo hace falta para las slides. Los notebooks son autosuficientes: leen los datos por URL y su primera celda instala lo que necesitan, así que se abren en Colab sin clonar nada. En local basta con Python y `requirements.txt`.
 
 Las versiones van fijadas a propósito: `pymc 6` exige `arviz 1.x`, que cambia la API de `az.summary`, `az.plot_ppc` y compañía, y este material está escrito contra `arviz 0.x`.
 
@@ -57,7 +56,7 @@ quarto render          # genera _site/
 quarto preview         # recarga en caliente mientras editas
 ```
 
-El render ejecuta varios modelos de pymc, así que la primera vez tarda un rato: unos 45 s en el runner de GitHub, y lo que dé tu máquina en local. El proyecto usa `freeze: auto`: mientras no cambie el código de una celda, Quarto reutiliza el resultado guardado en `_freeze/`.
+El render ejecuta varios modelos de pymc con `draws=2000, tune=2000, chains=4`, así que la primera vez tarda minutos, no segundos. Está bien que tarde: las slides se proyectan ya renderizadas, y el muestreo no se baja para ahorrar CI. El proyecto usa `freeze: auto`: mientras no cambie el código de una celda, Quarto reutiliza el resultado guardado en `_freeze/`.
 
 **`_freeze/` no se commitea.** El workflow de publicación cachea ese directorio entre ejecuciones, así que tampoco vuelve a muestrear salvo que cambie el código de una celda o caduque la caché.
 
@@ -70,7 +69,7 @@ quarto render                  # genera _site/
 quarto preview --port 4200     # ese puerto ya viene reenviado
 ```
 
-Los terminales nuevos arrancan con el venv activado, y Quarto usa su intérprete aunque no lo esté: `QUARTO_PYTHON` apunta a `.venv/bin/python`. El Codespace es para las slides; el taller archivado se abre en Colab.
+Los terminales nuevos arrancan con el venv activado, y Quarto usa su intérprete aunque no lo esté: `QUARTO_PYTHON` apunta a `.venv/bin/python`. Ese mismo entorno sirve para los notebooks, que por lo demás se abren en Colab sin necesidad de Codespace.
 
 La versión de Quarto va fijada en una variable al principio de `post-create.sh`; para actualizarla, esa línea y nada más. Si algo falla durante la creación, el contenedor arranca igual y el error se lee en el terminal: el script se puede relanzar con `bash .devcontainer/post-create.sh` tantas veces como haga falta.
 
@@ -80,10 +79,8 @@ La versión de Quarto va fijada en una variable al principio de `post-create.sh`
 
 ## Datos
 
-`data/radon.csv` es el conjunto de radón de Minnesota que usan Gelman y Hill, copiado del repositorio `estadistica-correspondencia`. Columnas relevantes: `log_radon`, `floor` (0 = sótano, 1 = planta baja), `county` y `county_code`.
+`data/radon.csv` es el conjunto de radón de Minnesota que usan Gelman y Hill, copiado del repositorio `estadistica-correspondencia`. Columnas relevantes: `log_radon`, `floor` (0 = sótano, 1 = planta baja), `county` y `county_code`. Lo leen las slides archivadas; `notebooks/radon.ipynb` no lee esta copia, sino la del repositorio [`pymc-devs/pymc-examples`](https://github.com/pymc-devs/pymc-examples), fijando el tag `2026.02.0`, que sirve un fichero idéntico. La copia se queda aquí como red de seguridad offline.
 
-`data/meridian_national.csv` es el conjunto simulado de Google Meridian (Apache 2.0) del seminario: 156 semanas, cinco canales de pago con impresiones e inversión, dos controles y las conversiones. Detalle de las columnas en [`data/README.md`](data/README.md). El notebook no lee esta copia: descarga los datos del repositorio de Meridian fijando el tag `v1.1.5`, que sirve un fichero idéntico. La copia se queda aquí como red de seguridad si algún día esa URL deja de responder.
+`data/meridian_national.csv` es el conjunto simulado de Google Meridian (Apache 2.0) del seminario: 156 semanas, cinco canales de pago con impresiones e inversión, dos controles y las conversiones. Detalle de las columnas en [`data/README.md`](data/README.md). El material no lee esta copia: descarga los datos del repositorio de Meridian fijando el tag `v1.1.5`, que sirve un fichero idéntico. La copia se queda aquí como red de seguridad si algún día esa URL deja de responder.
 
-El notebook del taller se ejecuta entero, con los dos muestreos dentro, en poco más de dos minutos: el esqueleto ajusta en tres segundos y el modelo de medios en poco más de un minuto. En Colab, que va más justo de CPU, cuenta con algo más. En `notebooks/idata/` hay una posteriori del modelo de medios guardada a mano; el notebook ni la escribe ni la lee, y está ahí para quien quiera mirarla sin esperar al muestreo.
-
-Los dos notebooks se commitean sin outputs y los dos quedan fuera de `_quarto.yml`: el sitio publicado son solo las slides.
+Los notebooks se commitean sin outputs y todos quedan fuera de `_quarto.yml`: el sitio publicado son solo las slides.
