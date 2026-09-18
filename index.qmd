@@ -1,0 +1,437 @@
+---
+title: "Decidir sin certeza"
+subtitle: "Una introducción a la inferencia bayesiana"
+author: "Leonardo Hansa"
+date: today
+date-format: "D/M/YYYY"
+lang: es
+execute:
+  echo: false
+  eval: true
+  warning: false
+  message: false
+format:
+  revealjs:
+    theme:
+      - simple
+      - custom.scss
+    logo: img/favicon.png
+    transition: none
+    slide-number: false
+    incremental: false
+---
+
+```{python}
+#| label: setup
+#| include: false
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+import pymc as pm
+import pytensor.tensor as pt
+import arviz as az
+
+from src.estilo import ACENTO, GRISES, aplicar_estilo
+
+aplicar_estilo()
+
+SEMILLA = 42
+```
+
+## Lanzo una moneda 100 veces y salen 60 caras
+
+::: {.notes}
+Abrir aquí y no alargarse: la moneda es el gancho, no el tema. Se lanza el dato, se deja
+la pregunta en el aire y se pasa. Nada de definir inferencia, ni de adelantar que luego
+habrá dos enfoques. En la siguiente slide se pide respuesta a mano alzada, se cuentan los
+síes y se sigue; no se abre debate, que se come el bloque. La moneda entera, hasta
+"Vamos a no dar la vuelta al problema", son unos quince minutos. "Quién soy" es un
+minuto: a qué me dedico y por qué doy este seminario. No es un currículum.
+:::
+
+## ¿Crees que la moneda favorece cara frente a cruz?
+
+¿$p > 0{,}5$?
+
+## Quién soy
+
+<!-- TODO: slide de presentación del ponente. La rellena Leonardo. -->
+
+# Primer intento: simular
+
+## Simulo 10.000 veces el experimento suponiendo que la moneda es justa
+
+```{python}
+#| label: graf-sim-hist
+
+np.random.seed(SEMILLA)
+
+n_lanzamientos = 100
+caras_obs = 60
+
+caras = np.random.binomial(n=n_lanzamientos, p=0.5, size=10_000)
+
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.hist(caras, bins=range(30, 71), edgecolor="white", color="#666666", alpha=0.85)
+ax.axvline(50, color="black", linestyle="--", linewidth=1.2, label="Valor esperado (50)")
+ax.set_xlabel("Número de caras")
+ax.set_ylabel("Frecuencia")
+ax.legend()
+plt.show()
+```
+
+## Cuento qué proporción de esas simulaciones da 60 caras o más
+
+```{python}
+#| label: graf-pvalor-hist
+
+p_valor_sim = np.mean(caras >= caras_obs)
+
+fig, ax = plt.subplots(figsize=(9, 4))
+_, bordes, barras = ax.hist(
+    caras, bins=range(30, 71), edgecolor="white", color="#BBBBBB", alpha=0.9
+)
+for barra, borde in zip(barras, bordes[:-1]):
+    if borde >= caras_obs:
+        barra.set_facecolor("#333333")
+        barra.set_edgecolor("white")
+        barra.set_hatch("///")
+
+ax.axvline(caras_obs, color=ACENTO, linewidth=2)
+ax.set_xlabel("Número de caras")
+ax.set_ylabel("Frecuencia")
+ax.set_title(f"p-valor simulado ≈ {p_valor_sim:.3f}")
+plt.show()
+```
+
+## Ese número es una aproximación a lo que se suele obtener con un contraste de hipótesis
+
+$$
+H_0: \theta = 0{,}5 \qquad \text{frente a} \qquad H_1: \theta > 0{,}5
+$$
+
+::: aside
+Hay fórmulas para calcularlo sin simular, pero no nos importan ahora.
+:::
+
+## ¿Te has dado cuenta de lo que acabo de hacer?
+
+## He dado la vuelta al problema
+
+- La pregunta era sobre **la moneda**, la distribución de $p$.
+- La respuesta es sobre **los datos**, su distribución dado $p = 0{,}5$.
+
+::: aside
+Y ni siquiera sobre los datos que tengo: sobre los que podrían haber salido.
+:::
+
+::: {.notes}
+Este es el giro del bloque. En la slide anterior, callarse: la pregunta es retórica, pero
+el silencio la hace funcionar. Los tres puntos van de uno en uno y el que importa es el
+tercero: hemos calculado la probabilidad de unos datos que no hemos visto —60 caras o
+más, en repeticiones del experimento que no han ocurrido— y encima suponiendo cierto lo
+contrario de lo que queríamos demostrar. Es el truco de Juan Tamariz, dar la vuelta a la
+situación sin que se note.
+
+Dejar claro, antes de entrar en el bayesiano, que el p-valor no está mal calculado:
+responde a otra pregunta. Si no se dice, alguien entiende "entonces el contraste no
+sirve" y ahí se va el resto del bloque.
+:::
+
+## El p-valor me resulta tremendamente lioso
+
+- "Si el p-valor es bajo, ¿rechazaba o aceptaba?"
+- "¿Cuál era la hipótesis nula?"
+
+## Vamos a no dar la vuelta al problema
+
+## La sesión de hoy va sobre:
+
+- Un caso real: el *marketing mix* de Google Meridian.
+- Elegir prioris, que es la parte de la que nadie habla.
+- Diagnosticar lo que sale del muestreo, no solo mirarlo.
+
+::: aside
+No tenemos mucho tiempo, así que dejaré muchas cosas fuera
+:::
+
+# El lanzamiento de moneda desde un punto de vista bayesiano
+
+## Nota inicial: no digo que no hagas estadística frecuentista
+
+## Todo el enfoque bayesiano se apoya en una sola regla
+
+$$
+P(p \mid \text{datos}) = \frac{P(\text{datos} \mid p) \cdot P(p)}{P(\text{datos})}
+$$
+
+## Cada término tiene nombre
+
+| Término | Nombre |
+|---|---|
+| $P(p \mid \text{datos})$ | posteriori: lo que buscas |
+| $P(\text{datos} \mid p)$ | verosimilitud: tu modelo |
+| $P(p)$ | priori: lo que creías antes |
+| $P(\text{datos})$ | constante normalizadora |
+
+## Necesitas tres cosas: datos, priori y modelo
+
+::: {.incremental}
+
+- **Datos**: 60 caras en 100 lanzamientos.
+- **Priori**: qué valores te parecen razonables para $p$ antes de mirar.
+- **Verosimilitud**: cómo se generan los datos dado $p$. Aquí, una binomial.
+
+:::
+
+## En PyMC queda así
+
+```{python}
+#| label: modelo-moneda
+#| echo: true
+
+with pm.Model() as modelo_moneda:
+    p_cara = pm.Uniform("p_cara", lower=0, upper=1)
+    y = pm.Binomial("y", n=100, p=p_cara, observed=60)
+
+    idata_moneda = pm.sample(
+        draws=2000, tune=2000, chains=4, random_seed=SEMILLA, progressbar=False
+    )
+```
+
+## 1. Priori
+
+```{python}
+#| label: modelo-moneda-1
+#| echo: true
+#| eval: false
+#| code-line-numbers: "4"
+import pymc as pm
+
+with pm.Model() as modelo_moneda:
+    p_cara = pm.Uniform("p_cara", lower=0, upper=1)
+    y = pm.Binomial("y", n=100, p=p_cara, observed=60)
+
+    idata_moneda = pm.sample(
+        draws=2000, tune=2000, chains=4, random_seed=SEMILLA, progressbar=False
+    )
+```
+
+## 2. Datos y verosimilitud
+
+```{python}
+#| label: modelo-moneda-2
+#| echo: true
+#| eval: false
+#| code-line-numbers: "5"
+import pymc as pm
+
+with pm.Model() as modelo_moneda:
+    p_cara = pm.Uniform("p_cara", lower=0, upper=1)
+    y = pm.Binomial("y", n=100, p=p_cara, observed=60)
+
+    idata_moneda = pm.sample(
+        draws=2000, tune=2000, chains=4, random_seed=SEMILLA, progressbar=False
+    )
+```
+
+## El resultado es una distribución
+
+```{python}
+#| label: graf-posterior-moneda
+
+p_cara_post = idata_moneda.posterior["p_cara"].values.flatten()
+
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.hist(p_cara_post, bins=50, density=True, edgecolor="white", color="#666666", alpha=0.85)
+ax.axvline(0.5, color="black", linestyle="--", linewidth=1.5, label="p = 0,5 (justa)")
+ax.axvline(0.6, color=ACENTO, linewidth=2, label="p observado = 0,60")
+ax.set_xlabel("p (probabilidad de cara)")
+ax.set_ylabel("Densidad")
+ax.legend()
+plt.show()
+```
+
+## Esa distribución no se ha calculado: se ha recorrido
+
+```{python}
+#| label: graf-caminata
+
+rng_mcmc = np.random.default_rng(SEMILLA)
+
+
+def log_numerador(p):
+    """El numerador de Bayes: priori uniforme por verosimilitud binomial, en logaritmos."""
+    if not 0 < p < 1:
+        return -np.inf
+    return caras_obs * np.log(p) + (n_lanzamientos - caras_obs) * np.log(1 - p)
+
+
+n_pasos = 2000
+subida = 50
+zoom = 200  # los pasos que se ven de cerca: con los dos mil no se distingue ninguno
+cadena = np.empty(n_pasos)
+
+actual = 0.10  # arranque deliberadamente malo: la cadena no sabe nada
+for i in range(n_pasos):
+    propuesta = actual + rng_mcmc.normal(0, 0.05)
+    if np.log(rng_mcmc.uniform()) < log_numerador(propuesta) - log_numerador(actual):
+        actual = propuesta
+    cadena[i] = actual
+
+
+def dibuja_recorrido(ax, hasta=n_pasos, detalle=False):
+    """El recorrido de la cadena. Con detalle=True se ven los pasos y los rechazos."""
+    ax.axvspan(0, subida, color="#DDDDDD", alpha=0.7, zorder=0,
+               label="Subida inicial (descartada)")
+    if detalle:
+        ax.plot(cadena[:hasta], color=GRISES[1], linewidth=1.1, marker="o", markersize=2.5)
+    else:
+        ax.plot(cadena[:hasta], color=GRISES[2], linewidth=0.5)
+    ax.axhline(0.6, color=ACENTO, linewidth=2, label="p observado = 0,60")
+    ax.set_xlabel("Paso")
+    ax.set_ylabel("p (probabilidad de cara)")
+    ax.set_ylim(0, 0.8)
+
+
+fig, ax = plt.subplots(figsize=(9, 4))
+dibuja_recorrido(ax, hasta=zoom, detalle=True)
+ax.legend(loc="lower right")
+plt.show()
+```
+
+::: {.notes}
+La regla, en cuatro frases: estás en un valor de $p$, propones otro cercano, miras cuántas
+veces más plausible es —priori por verosimilitud, nada más— y si es mejor, te mueves; si es
+peor, te mueves con esa probabilidad. Dos mil veces.
+
+Aquí se ven los doscientos primeros pasos de esos dos mil, porque con los dos mil no se
+distingue ninguno. Señalar los tramos planos: son los rechazos, los pasos en los que la
+cadena propone un valor peor y se queda donde estaba. Un tercio de las veces, más o menos.
+
+El arranque en 0,10 es a propósito: la cadena no sabe nada cuando empieza, y los primeros
+pasos son subida, no muestreo. Eso es el `tune=2000` de la slide del modelo, que PyMC usa
+para colocarse y luego tira; es la zona sombreada.
+
+Y la línea de honestidad, que hay que decirla: PyMC no hace exactamente esto, hace NUTS, que
+propone usando el gradiente y es mucho más listo. La idea de fondo es la misma.
+:::
+
+## El montón que deja el paseo es la posteriori
+
+```{python}
+#| label: graf-caminata-posteriori
+
+fig, (ax1, ax2) = plt.subplots(
+    1, 2, figsize=(9, 4), sharey=True, gridspec_kw={"width_ratios": [2, 1]}
+)
+
+dibuja_recorrido(ax1)  # ahora los dos mil pasos, sin detalle: importa el montón
+
+ax2.hist(
+    cadena[subida:], bins=30, density=True, orientation="horizontal",
+    color="#666666", edgecolor="white", alpha=0.85,
+)
+ax2.axhline(0.6, color=ACENTO, linewidth=2)
+ax2.set_xlabel("Densidad")
+ax2.set_xticks([])
+
+plt.tight_layout()
+plt.show()
+```
+
+::: aside
+Muestrear solo necesita el numerador: $P(p \mid \text{datos}) \propto P(\text{datos} \mid p) \cdot P(p)$. Al comparar dos valores de $p$, $P(\text{datos})$ se cancela. Esa integral no la hemos calculado nunca.
+:::
+
+::: {.notes}
+Ahora se ve la cadena entera, los dos mil pasos, y al lado el montón que deja. Aquí está el
+truco: como el paso se acepta según la plausibilidad relativa, la cadena acaba pasando en cada
+zona un tiempo proporcional a lo plausible que es esa zona. El recuento de visitas no se
+parece a la posteriori: es la posteriori. Y no se ha resuelto ninguna integral por el camino.
+
+Si conviene, volver un segundo a la slide del histograma de PyMC: es el mismo dibujo.
+
+De ahí el aside. Para decidir si me muevo solo comparo dos valores de $p$, y en esa
+comparación la constante normalizadora —la misma $P(\text{datos})$ de la tabla de hace un
+rato— aparece arriba y abajo y se va. Eso es justo lo que hace posible el muestreo: esa
+integral es la que no sabemos calcular en cuanto el modelo tiene más de dos parámetros.
+
+Referencia y parar: McElreath, *Statistical Rethinking* —el capítulo del rey Markov— y sus
+clases en YouTube, que están enteras y gratis. Nada de balance detallado ni de ergodicidad,
+que son otras dos horas. Son tres o cuatro minutos: si alguien pregunta cómo se sabe que la
+cadena ha funcionado, que la traza y el `r_hat` llegan en el bloque del esqueleto.
+:::
+
+## Y ahora la pregunta original se responde contando
+
+```{python}
+#| label: prob-sesgo
+#| echo: true
+
+float(np.mean(p_cara_post > 0.5))
+```
+
+::: aside
+Ese número es la probabilidad de que la probabilidad de obtener cara sea estrictamente mayor que 0,5 dada esta priori y esta verosimilitud.
+:::
+
+## Me costó años entender qué era un intervalo de confianza. Ya no me hace falta
+
+```{python}
+#| label: graf-hdi-moneda
+
+hdi = az.hdi(p_cara_post, hdi_prob=0.95)
+
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.hist(p_cara_post, bins=50, density=True, edgecolor="white", color="#BBBBBB", alpha=0.9)
+ax.axvspan(hdi[0], hdi[1], color=ACENTO, alpha=0.18)
+ax.axvline(0.5, color="black", linestyle="--", linewidth=1.5, label="p = 0,5")
+ax.set_xlabel("p (probabilidad de cara)")
+ax.set_ylabel("Densidad")
+ax.set_title(f"Intervalo de credibilidad 95%: [{hdi[0]:.3f}, {hdi[1]:.3f}]")
+ax.legend()
+plt.show()
+```
+
+## Una priori plana no es "no elegir"
+
+Una uniforme en $\theta$ deja de ser plana si miras $\log\frac{\theta}{1-\theta}$.
+
+Elegir una priori plana también es elegir.
+
+```{python}
+#| label: graf-priori-plana
+
+rng_priori = np.random.default_rng(SEMILLA)
+p_priori = rng_priori.uniform(0, 1, 100_000)
+logit_priori = np.log(p_priori / (1 - p_priori))
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 3.5))
+ax1.hist(p_priori, bins=50, density=True, edgecolor="white", color="#666666", alpha=0.85)
+ax1.set_xlabel("p")
+ax1.set_ylabel("Densidad")
+ax1.set_title("Plana en p")
+
+ax2.hist(logit_priori, bins=60, range=(-8, 8), density=True,
+         edgecolor="white", color=ACENTO, alpha=0.85)
+ax2.set_xlabel("logit(p)")
+ax2.set_title("La misma priori, en logit(p)")
+
+plt.tight_layout()
+plt.show()
+```
+
+## Resumen del bloque
+
+::: {.incremental}
+
+- El frecuentista calcula la probabilidad de **los datos**, o de otros más extremos.
+- El bayesiano calcula la probabilidad del **parámetro**.
+- El segundo responde a la pregunta que yo hice.
+- El precio: elegir la priori, y mucho más cómputo.
+- Ahora, el mismo bucle sobre un caso real: cuánto vende cada euro de publicidad.
+
+:::
