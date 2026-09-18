@@ -23,6 +23,12 @@ Datos simulados de [Google Meridian](https://github.com/google/meridian), la lib
 `meridian/data/simulated_data/csv/national_all_channels.csv`, publicado bajo licencia
 Apache 2.0, que permite redistribuirlo citando origen y licencia.
 
+**El notebook del taller no lee esta copia.** La descarga de
+`raw.githubusercontent.com/google/meridian/v1.1.5/…`, fijando el tag para que el taller no
+dependa de que Google no reorganice sus carpetas. El fichero servido en esa URL es idéntico
+byte a byte al de aquí. Esta copia se queda como red de seguridad: si algún día esa URL deja
+de responder, se cambia la constante `URL_DATOS` del notebook por esta ruta y se sigue.
+
 156 semanas, del 2021-01-25 al 2024-01-15, a nivel nacional (una sola serie, sin
 regiones).
 
@@ -40,8 +46,8 @@ regiones).
 
 El KPI del taller son los **ingresos**: `revenue = conversions * revenue_per_conversion`.
 Así el ROI queda en euros por euro y la priori que Meridian pone por defecto sobre el ROI,
-`LogNormal(0.2, 0.9)`, se puede usar tal cual. La columna la añade `cargar_datos()` en
-`src/mmm.py`.
+`LogNormal(0.2, 0.9)`, se puede usar tal cual. La columna la añade el propio notebook, en la
+celda donde carga el fichero.
 
 En el mismo directorio del repositorio de Meridian hay versiones **por regiones**
 (`geo_all_channels.csv` y compañía), que son las que piden un modelo jerárquico. El taller

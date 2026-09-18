@@ -17,5 +17,6 @@ jupyter>=1.1
 nbclient
 ipykernel
 
-# Guardar y leer el idata del taller
+# Solo para regenerar a mano la posteriori guardada en notebooks/idata/.
+# El taller no la usa: muestrea siempre.
 h5netcdf>=1.3
