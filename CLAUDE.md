@@ -18,7 +18,7 @@ Público: profesionales de datos. Saben Python y regresión; no saben bayesiana.
 
 Idioma de todo el material: **español**. Los nombres de fichero, variables y ramas, en inglés o español según ya estén; no renombrar por gusto.
 
-**`index.qmd` está a medias**: el seminario se rehace entero (issue #36) y de momento llega hasta donde acaba la moneda, el primer bloque (issue #39). El caso de Meridian, los dos modelos y el cierre están por escribir (issues #40, #41, #43 y #44). `_quarto.yml` apunta a él y no renderiza nada más.
+**`index.qmd` está casi entero**: el seminario se rehace de cero (issue #36) y ya recorre la moneda (#39), el caso de Meridian (#40), el esqueleto (#41) y el modelo de medios (#43). Falta el cierre (#44). `_quarto.yml` apunta a él y no renderiza nada más.
 
 ## Material archivado
 
