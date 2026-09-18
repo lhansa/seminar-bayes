@@ -28,6 +28,7 @@ notebooks/radon.ipynb             el recorrido del radón, narrativo y sin ejerc
 notebooks/taller.ipynb            taller archivado
 notebooks/taller-solucion.ipynb   el taller archivado, con los ejercicios resueltos
 notebooks/idata/                  posteriori del modelo de medios, guardada a mano (no la usa nadie)
+scripts/comparar_hill.py          ajusta el modelo de medios con y sin saturación de Hill, para decidirlo con números (no entra en el render)
 img/                              favicon, logo y QR
 .devcontainer/                    entorno de las slides en Codespaces (Quarto, compilador y venv con uv)
 ```
