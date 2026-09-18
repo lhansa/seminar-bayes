@@ -32,6 +32,7 @@ import matplotlib.pyplot as plt
 import pymc as pm
 import pytensor.tensor as pt
 import arviz as az
+import statsmodels.api as sm
 
 from src.estilo import ACENTO, GRISES, aplicar_estilo
 
@@ -435,3 +436,99 @@ plt.show()
 - Ahora, el mismo bucle sobre un caso real: cuánto vende cada euro de publicidad.
 
 :::
+
+# El caso: cuánto vende cada euro de publicidad
+
+```{python}
+#| label: datos-mmm
+#| include: false
+
+URL_DATOS = (
+    "https://raw.githubusercontent.com/google/meridian/v1.1.5/"
+    "meridian/data/simulated_data/csv/national_all_channels.csv"
+)
+
+df = pd.read_csv(URL_DATOS, parse_dates=["time"])
+df["revenue"] = df["conversions"] * df["revenue_per_conversion"]
+
+CANALES = [f"Channel{i}" for i in range(5)]
+CONTROLES = ["competitor_sales_control", "sentiment_score_control"]
+```
+
+## `{python} len(df)` semanas de un anunciante nacional, simuladas por Google Meridian
+
+- Cinco canales de pago, con impresiones e inversión.
+- Dos controles: ventas de la competencia y sentimiento de marca.
+- El KPI son los ingresos.
+
+::: aside
+Datos simulados por Google Meridian, leídos por URL fijando la versión `v1.1.5`.
+:::
+
+## Los ingresos suben y bajan; la inversión, canal a canal, también
+
+```{python}
+#| label: graf-series-mmm
+
+fig, ejes = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+
+ejes[0].plot(df["time"], df["revenue"] / 1e6, color=ACENTO)
+ejes[0].set_ylabel("Ingresos (M€)")
+
+for canal, color in zip(CANALES, GRISES + [ACENTO]):
+    ejes[1].plot(df["time"], df[f"{canal}_spend"] / 1e3, color=color, label=canal, lw=1)
+ejes[1].set_ylabel("Inversión (k€)")
+ejes[1].legend(ncol=5, fontsize=9)
+
+fig.tight_layout()
+plt.show()
+```
+
+## La regresión que ajusta todo el mundo: ingresos contra inversión, canal a canal
+
+```{python}
+#| label: tabla-ols
+
+X = df[[f"{c}_spend" for c in CANALES] + CONTROLES]
+ols = sm.OLS(df["revenue"], sm.add_constant(X)).fit()
+
+filas = [f"{c}_spend" for c in CANALES]
+resumen_ols = pd.DataFrame({
+    "roi_ols": ols.params[filas].values,
+    "ic 5%": ols.conf_int().loc[filas, 0].values,
+    "ic 95%": ols.conf_int().loc[filas, 1].values,
+    "p-valor": ols.pvalues[filas].values,
+}, index=CANALES)
+resumen_ols.round(2)
+```
+
+::: aside
+Mínimos cuadrados. El coeficiente de cada canal se lee directamente como ROI: euros de ingreso incremental por euro invertido.
+:::
+
+## Ningún canal es significativo y el $R^2$ es `{python} f"{ols.rsquared:.2f}"`
+
+- El p-valor más bajo, el de `Channel3`, es `{python} f"{ols.pvalues['Channel3_spend']:.2f}"`.
+- Los intervalos van de perder dinero a ganar el triple: `Channel2` llega a `{python} f"{ols.conf_int().loc['Channel2_spend', 1]:.1f}"` veces lo invertido.
+
+::: aside
+Esto es lo que se lleva el equipo de marketing a la reunión.
+:::
+
+## Los canales se mueven juntos, y un anuncio no se agota la semana en que se emite
+
+```{python}
+#| label: tabla-correlacion
+
+correlaciones = df[[f"{c}_spend" for c in CANALES]].corr()
+correlaciones.index = correlaciones.columns = CANALES
+correlaciones.round(2)
+```
+
+- `Channel2`, `Channel3` y `Channel4` correlacionan entre sí por encima de `{python} f"{min(correlaciones.loc['Channel2', 'Channel3'], correlaciones.loc['Channel2', 'Channel4'], correlaciones.loc['Channel3', 'Channel4']):.2f}"`.
+- Y son `{python} len(df)` filas para separar eso, más el retraso con el que vende cada anuncio.
+
+## No es que falte un modelo más grande
+
+- Las preguntas que importan no se responden con un p-valor.
+- Y ya sabemos, por la moneda, que hay otra manera.
