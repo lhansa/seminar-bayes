@@ -100,3 +100,4 @@ El render ejecuta MCMC, así que la primera vez tarda un rato. `freeze: auto` gu
 - Si tocas el código de una celda, vuelve a renderizar: `_freeze/` queda obsoleto para esa celda.
 - Si añades dependencias, actualiza `requirements.txt`.
 - Si cambias la estructura, actualiza `README.md` y este fichero.
+- La PR se escribe sobre `.github/pull_request_template.md` y **empieza por `Fixes #NN`**. La palabra clave va en inglés (`Fixes`, `Closes`, `Resolves`): con "Cierra #NN" el issue se queda abierto después del merge, porque GitHub no la reconoce. Si la PR cierra varios issues, cada uno lleva la suya: `Fixes #12, closes #13`.
