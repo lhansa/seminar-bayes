@@ -37,10 +37,6 @@ from src.estilo import ACENTO, GRISES, aplicar_estilo
 
 aplicar_estilo()
 
-# Error deliberado para comprobar que check-render.yml pone la PR en rojo.
-# Se revierte en el commit siguiente.
-esto_no_existe()
-
 SEMILLA = 42
 ```
 
