@@ -33,6 +33,7 @@ import pymc as pm
 import pytensor.tensor as pt
 import arviz as az
 import statsmodels.api as sm
+from scipy import stats
 
 from src.estilo import ACENTO, GRISES, aplicar_estilo
 
@@ -707,4 +708,367 @@ varianza_explicada_esqueleto = 1 - sigma_esqueleto ** 2
 
 ::: aside
 El siguiente bloque le mete los medios.
+:::
+
+# El modelo de medios: la priori sobre el ROI
+
+```{python}
+#| label: datos-medios
+#| include: false
+
+MAX_LAG = 8  # rezagos del adstock, el valor por defecto de Meridian
+
+# Cada canal, dividido por la mediana de sus semanas con inversión: una unidad es "una
+# semana normal de ese canal". Ni media ni máximo: hay canales con semanas a cero.
+x = df[[f"{c}_spend" for c in CANALES]].to_numpy(float)
+escala_medios = np.array([np.median(col[col > 0]) for col in x.T])
+x_esc = x / escala_medios
+gasto_total = x.sum(axis=0)
+
+# rezagos[t, l, m] = canal m en t - l, con ceros antes del principio de la serie. Así el
+# adstock es un producto y no un bucle.
+rezagos = np.zeros((len(df), MAX_LAG + 1, len(CANALES)))
+for lag in range(MAX_LAG + 1):
+    rezagos[lag:, lag, :] = x_esc[: len(df) - lag, :]
+
+
+def pesos_adstock(alpha, max_lag=MAX_LAG):
+    """Pesos del adstock geométrico normalizado. Vale para numpy y para pytensor."""
+    pesos = alpha[:, None] ** np.arange(max_lag + 1)[None, :]
+    return pesos / pesos.sum(axis=1, keepdims=True)
+```
+
+## El efecto de un anuncio no se acaba la semana en que se emite
+
+```{python}
+#| label: graf-adstock
+
+fig, eje = plt.subplots(figsize=(9, 4))
+
+lags = np.arange(MAX_LAG + 1)
+for alpha_, color in zip([0.1, 0.4, 0.7, 0.9], GRISES[:3] + [ACENTO]):
+    pesos_ = pesos_adstock(np.array([alpha_]))[0]
+    vida_media = np.log(0.5) / np.log(alpha_)
+    eje.plot(lags, pesos_, "o-", color=color,
+             label=f"α = {alpha_} (vida media {vida_media:.1f} sem.)")
+eje.set_xlabel("Semanas desde la impresión")
+eje.set_ylabel("Peso")
+eje.legend(fontsize=11)
+
+plt.show()
+```
+
+`alpha ~ Uniform(0, 1)`: ni idea de cuánto dura, y no pasa nada por decirlo.
+
+::: aside
+Los pesos suman uno a propósito: $\alpha$ reparte el efecto en el tiempo, no lo infla. Meridian usa ocho semanas de memoria.
+:::
+
+::: {.notes}
+El adstock arregla uno de los dos supuestos falsos de la regresión del principio: que el
+anuncio de esta semana no vende nada la semana que viene. El otro —que el euro un millón
+hace lo mismo que el primero— es la saturación, la curva de Hill, y hoy se queda fuera. Se
+dice de palabra y se sigue: se ha probado, mete un parámetro por canal que los datos no
+saben estimar, ensancha los intervalos del ROI y no cambia el orden de los canales. Diez
+minutos de explicación que no tienen nada de bayesiano.
+
+La `Uniform(0, 1)` de `alpha` no es pereza: es la respuesta honesta. Y al final del bloque
+hay que decir que la posteriori la devuelve casi tal cual: estos datos no distinguen un
+canal con memoria de una semana de otro con memoria de un mes.
+:::
+
+## Y ahora `beta`. ¿Alguien tiene una intuición sobre `beta`?
+
+El coeficiente de una inversión rezagada, dividida por la mediana de sus semanas con
+inversión, sobre un KPI estandarizado.
+
+::: {.notes}
+Esta slide es una pregunta a la sala y un silencio. No rellenarlo. Nadie tiene esa
+intuición: yo tampoco, y llevo años con esto. Si alguien levanta la mano, preguntarle qué
+valor le parece razonable y dejar que se oiga en voz alta lo raro que suena.
+:::
+
+## Sobre lo que sí se tiene intuición es sobre el ROI
+
+```{python}
+#| label: graf-priori-roi
+
+priori_roi = stats.lognorm(s=0.9, scale=np.exp(0.2))
+roi_bajo, roi_alto = priori_roi.ppf(0.05), priori_roi.ppf(0.95)
+
+rejilla_roi = np.linspace(0, 8, 400)
+densidad_roi = priori_roi.pdf(rejilla_roi)
+
+fig, eje = plt.subplots(figsize=(9, 4))
+eje.plot(rejilla_roi, densidad_roi, color=GRISES[1], linewidth=2)
+eje.fill_between(rejilla_roi, densidad_roi, color=ACENTO, alpha=0.2,
+                 where=(rejilla_roi >= roi_bajo) & (rejilla_roi <= roi_alto),
+                 label="90 % central")
+eje.axvline(1.0, color="black", linestyle="--", linewidth=1.2, label="ROI = 1: ni gana ni pierde")
+eje.set_xlabel("ROI: euros de ingreso incremental por euro invertido")
+eje.set_ylabel("Densidad")
+eje.legend()
+plt.show()
+```
+
+`roi ~ LogNormal(0,2; 0,9)`: mediana `{python} f"{priori_roi.median():.2f}".replace(".", ",")`, el 90 % central entre `{python} f"{roi_bajo:.2f}".replace(".", ",")` y `{python} f"{roi_alto:.2f}".replace(".", ",")`, y un `{python} f"{100 * priori_roi.cdf(1):.0f}"` % de probabilidad de estar perdiendo dinero.
+
+::: {.notes}
+Traducida a la reunión: "asumo que la publicidad devuelve algo más de lo que cuesta, pero
+admito casi cualquier cosa entre perder tres cuartas partes y quintuplicar, y me parece
+casi igual de probable perder que ganar". Es honesta para quien no tiene ni idea. También
+es enorme, y se le pone igual a los cinco canales, cuando uno se lleva siete veces más
+presupuesto que otro. Que Meridian la traiga por defecto no es una recomendación: es lo
+único que puede hacer una librería que no sabe de qué empresa le hablas.
+:::
+
+## `beta` deja de ser un parámetro: es una cuenta
+
+El ingreso incremental de un canal es lo que se pierde si lo apagas, y por construcción
+vale su ROI por lo invertido:
+
+$$
+\beta_m \cdot sd(y) \cdot \sum_t \tilde{x}_{tm} = \text{roi}_m \cdot \text{gasto}_m
+\quad\Longrightarrow\quad
+\beta_m = \frac{\text{roi}_m \cdot \text{gasto}_m}{sd(y) \cdot \sum_t \tilde{x}_{tm}}
+$$
+
+::: aside
+La priori se escribe en las unidades en las que la gente sabe pensar. Lo demás es despejar.
+:::
+
+## Una priori no es de un parámetro: es del modelo entero
+
+::: {.incremental}
+
+- En el esqueleto, `mu ~ Normal(0, 1)`, y era lo correcto: el nivel de un KPI estandarizado.
+- Aquí `mu` ya no es el nivel de los ingresos: es lo que queda **después** de restar los medios.
+- Así que vuelve a `Normal(0, 5)`. No por prudencia: porque tiene que poder irse a −3 para compensar lo que aportan.
+
+:::
+
+::: {.notes}
+Esta es la lección del bloque, no un detalle de implementación. Con la priori apretada del
+esqueleto, `mu` no puede bajar el nivel base, el modelo se pelea con su propia priori y lo
+paga el muestreador semanas después, cuando ya nadie se acuerda de esta slide. Y la trampa
+de la trampa: la simulación previa no detecta este error, porque la mediana simulada casi
+no se mueve si aprietas `mu`. Se ve en la posteriori, y lo vemos dentro de dos slides.
+:::
+
+## El modelo entero
+
+```{python}
+#| label: modelo-medios
+#| echo: true
+
+coords_medios = {"semana": semanas, "control": CONTROLES, "canal": CANALES}
+
+with pm.Model(coords=coords_medios) as medios:
+    alpha = pm.Uniform("alpha", 0.0, 1.0, dims="canal")
+    roi = pm.LogNormal("roi", mu=0.2, sigma=0.9, dims="canal")
+    gamma = pm.Normal("gamma", 0.0, 1.0, dims="control")
+    mu = pm.Normal("mu", 0.0, 5.0)
+    sigma = pm.Exponential("sigma", 1.0)
+
+    pesos = pesos_adstock(alpha)
+    adstock = pt.sum(rezagos * pesos.T[None, :, :], axis=1)
+
+    beta = pm.Deterministic(
+        "beta", roi * gasto_total / (y_sd * pt.sum(adstock, axis=0)), dims="canal"
+    )
+    contribucion = pm.Deterministic("contribucion", roi * gasto_total, dims="canal")
+
+    media = mu + pt.dot(adstock, beta) + pt.dot(z_esc, gamma)
+    pm.Normal("y", mu=media, sigma=sigma, observed=y_esc, dims="semana")
+```
+
+## ¿Cuánta publicidad hay metida en esa priori?
+
+```{python}
+#| label: graf-previa-medios
+
+with medios:
+    previa_medios = pm.sample_prior_predictive(draws=2000, random_seed=SEMILLA)
+
+y_previo_medios = (
+    previa_medios.prior_predictive["y"].values.reshape(-1, len(df)) * y_sd + y_media
+)
+contrib_previa = previa_medios.prior["contribucion"].values.reshape(-1, len(CANALES))
+pct_previo = 100 * contrib_previa.sum(axis=1) / y.sum()
+
+fig, ejes = plt.subplots(1, 2, figsize=(10, 3.8))
+
+ejes[0].hist(y_previo_medios.ravel() / 1e6, bins=80, color="#AAAAAA", density=True,
+             label="simulado desde la priori")
+ejes[0].hist(y / 1e6, bins=30, color=ACENTO, density=True, alpha=0.8, label="observado")
+ejes[0].set_xlabel("Ingresos semanales (M€)")
+ejes[0].set_ylabel("Densidad")
+ejes[0].legend(fontsize=10)
+
+ejes[1].hist(pct_previo, bins=60, color=ACENTO)
+ejes[1].set_xlabel("% de los ingresos que la priori\natribuye a los medios")
+
+plt.tight_layout()
+plt.show()
+```
+
+Mediana del `{python} f"{np.median(pct_previo):.0f}"` %, percentil 95 del `{python} f"{np.percentile(pct_previo, 95):.0f}"` %: antes de ver un solo dato.
+
+::: {.notes}
+El panel de la izquierda es el de siempre: ¿considera el modelo normales unos ingresos
+imposibles? El de la derecha es el que importa, y es la pregunta que hay que hacerle a
+cualquier MMM, propio o de proveedor: qué contribución de medios asume tu priori antes de
+mirar los datos. Si no saben responderla, el número que te van a dar es el suyo, no el de
+los datos.
+
+Aquí el percentil 95 dice que le parece perfectamente normal que seis de cada diez euros
+facturados vengan de los anuncios. Si eso fuera verdad, no harían falta modelos. Con el
+jefe delante, apretar la sigma de la lognormal, no su centro: el problema es la cola.
+:::
+
+## Catorce parámetros en vez de tres, y ya no son tres segundos
+
+```{python}
+#| label: ajuste-medios
+#| echo: true
+
+with medios:
+    idata_medios = pm.sample(
+        draws=2000, tune=2000, chains=4, target_accept=0.95,
+        random_seed=SEMILLA, progressbar=False,
+    )
+```
+
+```{python}
+#| label: ppc-medios-datos
+#| include: false
+
+with medios:
+    idata_medios.extend(pm.sample_posterior_predictive(idata_medios, random_seed=SEMILLA))
+
+resumen_medios = az.summary(idata_medios, var_names=["roi", "alpha", "gamma", "mu", "sigma"])
+divergencias_medios = int(idata_medios.sample_stats["diverging"].sum())
+mu_medios_post = float(idata_medios.posterior["mu"].mean())
+sigma_medios = float(idata_medios.posterior["sigma"].mean())
+```
+
+## Otra vez: ¿ha funcionado el muestreador?
+
+```{python}
+#| label: graf-traza-medios
+
+az.plot_trace(idata_medios, var_names=["roi", "mu", "sigma"], compact=True)
+plt.tight_layout()
+plt.show()
+```
+
+- `r_hat` máximo: `{python} f"{resumen_medios['r_hat'].max():.2f}"`. `ess_bulk` mínimo: `{python} int(resumen_medios['ess_bulk'].min())`. Divergencias: `{python} divergencias_medios`.
+- `mu` se ha ido a `{python} f"{mu_medios_post:.1f}".replace(".", ",").replace("-", "−")`. Con la `Normal(0, 1)` del esqueleto no habría llegado.
+
+::: {.notes}
+El `target_accept` es 0,95 y no el 0,9 del esqueleto: con 0,9 este modelo deja tres
+divergencias. Está medido, no supuesto.
+
+Y el segundo punto es la slide de `mu` cobrada: la posteriori está a casi tres
+desviaciones típicas del centro de la priori que era correcta en el esqueleto. Aquella
+priori no era mala, era mala **para este otro modelo**.
+:::
+
+## El muestreador va fino; el modelo sigue explicando poco
+
+```{python}
+#| label: graf-ppc-medios
+
+az.plot_ppc(idata_medios, num_pp_samples=100, colors=[ACENTO, "#7A7A7A", "black"])
+plt.show()
+```
+
+Con los cinco canales dentro, la varianza explicada pasa del `{python} f"{100 * varianza_explicada_esqueleto:.0f}"` % al `{python} f"{100 * (1 - sigma_medios ** 2):.0f}"` %.
+
+::: {.notes}
+Diagnosticar son dos preguntas, no una: el muestreo puede ser impecable y el modelo, flojo.
+Las dos cosas son verdad a la vez, como en el esqueleto.
+
+Y donde falla la predictiva posterior no es donde se espera: clava el centro y se pasa por
+abajo, generando semanas de facturación muy por debajo de la peor semana real. Un error
+gaussiano no sabe que la facturación tiene un suelo.
+:::
+
+## La pregunta que le importa a alguien
+
+```{python}
+#| label: graf-hdi-roi
+
+roi_post = idata_medios.posterior["roi"].values.reshape(-1, len(CANALES))
+hdi_roi = az.hdi(idata_medios, var_names=["roi"], hdi_prob=0.9)["roi"].values
+roi_mediana = np.median(roi_post, axis=0)
+
+posiciones = np.arange(len(CANALES))
+
+fig, eje = plt.subplots(figsize=(9, 4))
+eje.hlines(posiciones, hdi_roi[:, 0], hdi_roi[:, 1], color=GRISES[3], linewidth=7)
+eje.plot(roi_mediana, posiciones, "o", color=ACENTO, markersize=9)
+eje.axvline(1.0, color="black", linestyle="--", linewidth=1.2, label="ROI = 1")
+eje.set_yticks(posiciones)
+eje.set_yticklabels(CANALES)
+eje.invert_yaxis()
+eje.set_xlabel("ROI: euros de ingreso incremental por euro invertido (HDI al 90 %)")
+eje.legend()
+plt.show()
+```
+
+## La frase, sin la palabra "posteriori" dentro
+
+```{python}
+#| label: frase-roi
+#| include: false
+
+i_c2, i_c0 = CANALES.index("Channel2"), CANALES.index("Channel0")
+hdi_c2 = hdi_roi[i_c2]
+p_c2_mejor = float((roi_post[:, i_c2] > roi_post[:, i_c0]).mean())
+```
+
+> `Channel2` devuelve entre `{python} f"{hdi_c2[0]:.1f}".replace(".", ",")` y `{python} f"{hdi_c2[1]:.1f}".replace(".", ",")` euros por cada euro invertido, con un 90 % de probabilidad.
+
+- Es el candidato a subir presupuesto, pero sin afirmarlo: la probabilidad de que le gane a `Channel0` es del `{python} f"{100 * p_c2_mejor:.0f}"` %, poco más que una moneda.
+- Eso es lo que no sabía decir la regresión del principio.
+
+::: {.notes}
+Las dos cifras salen de `az.hdi`, no las he escrito yo. Y el intervalo es enorme: lo mismo
+describe un canal ruinoso que uno excelente. Decirlo, que es la gracia. Un experimento en
+ese canal daría más información que otro trimestre entero mirando el histórico.
+
+Cuidado con la conclusión fácil de señalar un canal y decir "este pierde dinero": esa frase
+depende de supuestos que estos datos no sostienen —la saturación, sin ir más lejos, la
+mueve veinte puntos—, y no es la que hay que llevarse a casa.
+:::
+
+## Priori contra posteriori del ROI: la diferencia es lo que han dicho los datos
+
+```{python}
+#| label: graf-priori-posteriori-roi
+
+roi_previo = previa_medios.prior["roi"].values.reshape(-1, len(CANALES))
+
+fig, ejes = plt.subplots(1, len(CANALES), figsize=(11, 3), sharey=True)
+bordes = np.linspace(0, 12, 61)
+for i, (eje, canal) in enumerate(zip(ejes, CANALES)):
+    eje.hist(roi_previo[:, i], bins=bordes, density=True, color="#CCCCCC", label="priori")
+    eje.hist(roi_post[:, i], bins=bordes, density=True, color=ACENTO, alpha=0.85,
+             label="posteriori")
+    eje.set_title(canal, fontsize=11)
+    eje.set_xlim(0, 12)
+    eje.set_xlabel("ROI")
+ejes[0].legend(fontsize=9)
+
+plt.tight_layout()
+plt.show()
+```
+
+::: {.notes}
+Donde la posteriori se separa de la priori, han hablado los datos. Donde se le parece, el
+número lo has puesto tú y lo estás sacando con otro nombre. Lo mismo pasa con los cinco
+`alpha`: salen prácticamente uniformes, así que estos datos no distinguen un canal con
+memoria de una semana de otro con memoria de un mes. Eso no es un fallo del muestreador, es
+información.
 :::
