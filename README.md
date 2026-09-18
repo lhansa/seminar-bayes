@@ -17,13 +17,12 @@ Público objetivo: profesionales de datos que manejan Python y regresión, pero 
 index.qmd                         slides de la parte teórica
 custom.scss                       tema de las slides (morado de marca #800080 sobre simple)
 _quarto.yml                       configuración del proyecto Quarto
-src/estilo.py                     estilo común de matplotlib para slides y notebook
-src/mmm.py                        datos y transformaciones del taller (escalado, adstock; Hill sin usar)
+src/estilo.py                     estilo común de matplotlib para las slides
 data/radon.csv                    919 mediciones de radón en Minnesota (Gelman)
-data/meridian_national.csv        156 semanas de marketing mix simuladas por Google (Meridian)
+data/meridian_national.csv        156 semanas de marketing mix simuladas por Google (copia offline; el taller las lee por URL)
 notebooks/taller.ipynb            taller práctico
 notebooks/taller-solucion.ipynb   el taller con los seis ejercicios resueltos
-notebooks/idata/                  posteriori guardada del modelo de medios del taller
+notebooks/idata/                  posteriori del modelo de medios, guardada a mano (el taller no la usa)
 img/                              favicon, logo y QR
 .devcontainer/                    entorno de las slides en Codespaces (Quarto, compilador y venv con uv)
 ```
@@ -32,7 +31,7 @@ img/                              favicon, logo y QR
 
 Hay dos maneras de llegar al taller con el entorno listo. La corta:
 
-**Google Colab.** Abre el badge de arriba, ejecuta la primera celda y ya está. Esa celda instala `numpy`, `pymc`, `arviz` y `h5netcdf` con los mismos topes que `requirements.txt` y clona este repositorio en `/content/seminar-bayes`, así que el notebook encuentra los datos, `src/` y la posteriori guardada igual que en local. No hace falta cuenta de GitHub ni compilador: el runtime de Colab ya trae `gcc`. Si Colab pide reiniciar el entorno después de instalar, se reinicia y se vuelve a empezar por la primera celda.
+**Google Colab.** Abre el badge de arriba, ejecuta la primera celda y ya está. Esa celda instala `numpy`, `pymc` y `arviz` con los mismos topes que `requirements.txt`, y no hace nada más: el notebook es autosuficiente y lee los datos por URL del repositorio de Meridian, así que no clona nada ni importa nada de `src/`. No hace falta cuenta de GitHub ni compilador: el runtime de Colab ya trae `gcc`. Si Colab pide reiniciar el entorno después de instalar, se reinicia y se vuelve a empezar por la primera celda.
 
 **En local.** Lo que viene a continuación. Quarto solo hace falta para las slides; para el taller basta con Python y `requirements.txt`.
 
@@ -81,8 +80,8 @@ La versión de Quarto va fijada en una variable al principio de `post-create.sh`
 
 `data/radon.csv` es el conjunto de radón de Minnesota que usan Gelman y Hill, copiado del repositorio `estadistica-correspondencia`. Columnas relevantes: `log_radon`, `floor` (0 = sótano, 1 = planta baja), `county` y `county_code`.
 
-`data/meridian_national.csv` es el conjunto simulado de Google Meridian (Apache 2.0) que usa el taller: 156 semanas, cinco canales de pago con impresiones e inversión, dos controles y las conversiones. Detalle de las columnas en [`data/README.md`](data/README.md).
+`data/meridian_national.csv` es el conjunto simulado de Google Meridian (Apache 2.0) del taller: 156 semanas, cinco canales de pago con impresiones e inversión, dos controles y las conversiones. Detalle de las columnas en [`data/README.md`](data/README.md). El notebook no lee esta copia: la descarga del repositorio de Meridian fijando el tag `v1.1.5`, que sirve un fichero idéntico. La copia se queda aquí como red de seguridad si algún día esa URL deja de responder.
 
-El notebook del taller se ejecuta entero, con los dos muestreos dentro, en poco más de dos minutos: el esqueleto ajusta en tres segundos y el modelo de medios en poco más de un minuto. Quien vaya con prisa puede poner `MUESTREAR = False` en la sección 5 y cargar la posteriori guardada en `notebooks/idata/`. En Colab esa posteriori llega con el clon del repositorio, así que la vía corta también funciona allí.
+El notebook del taller se ejecuta entero, con los dos muestreos dentro, en poco más de dos minutos: el esqueleto ajusta en tres segundos y el modelo de medios en poco más de un minuto. En Colab, que va más justo de CPU, cuenta con algo más. En `notebooks/idata/` hay una posteriori del modelo de medios guardada a mano; el notebook ni la escribe ni la lee, y está ahí para quien quiera mirarla sin esperar al muestreo.
 
 Lo mismo vale para `notebooks/taller-solucion.ipynb`, que es el mismo notebook con los seis ejercicios resueltos. Los dos se commitean sin outputs y los dos quedan fuera de `_quarto.yml`: el sitio publicado son solo las slides.
