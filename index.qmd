@@ -1072,3 +1072,50 @@ número lo has puesto tú y lo estás sacando con otro nombre. Lo mismo pasa con
 memoria de una semana de otro con memoria de un mes. Eso no es un fallo del muestreador, es
 información.
 :::
+
+# Cierre
+
+## Lo que te llevas
+
+::: {.incremental}
+
+- La priori se escribe en las unidades en las que la gente sabe pensar, no en las que le vienen cómodas al modelo.
+- Se simula desde ella antes de mirar los datos: si el disparate sale ahí, es tuyo, no de los datos.
+- Se diagnostica antes de leer la posteriori. Un muestreador que no ha convergido no opina.
+- La respuesta es una distribución, no un asterisco.
+
+:::
+
+## Lo que no ha cabido en una hora
+
+::: {.incremental}
+
+- Jerárquicos: varios mercados en vez de uno nacional.
+- Geo-level: por debajo del agregado nacional.
+- Calibración con experimentos: contrastar el ROI del modelo con un test real.
+- Saturación de Hill: se ha medido y ha sobrado.
+
+:::
+
+::: {.notes}
+Esta slide existe para que la pregunta de la sala caiga donde quiero. Si preguntan por
+Hill, la respuesta ya está medida y contada en el bloque anterior. Las otras tres son
+extensiones de verdad, no excusas por falta de tiempo.
+:::
+
+## Para profundizar
+
+- `google/meridian`, de donde sale este modelo.
+- PyMC, para escribirlo.
+- Gelman y Hill, *Data Analysis Using Regression and Multilevel/Hierarchical Models*.
+- McElreath, *Statistical Rethinking*, libro y sus clases en YouTube.
+
+## Te suscribes y te llevas el notebook del radón, con el vídeo de los jerárquicos
+
+![leonardohansa.com/regalo-bayes](img/qr.png){fig-align="center" width="280"}
+
+::: aside
+El notebook es público, pero desde aquí no hay atajo: se llega suscribiéndote.
+:::
+
+# leonardohansa.com
