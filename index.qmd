@@ -142,11 +142,6 @@ responde a otra pregunta. Si no se dice, alguien entiende "entonces el contraste
 sirve" y ahí se va el resto del bloque.
 :::
 
-## El p-valor me resulta tremendamente lioso
-
-- "Si el p-valor es bajo, ¿rechazaba o aceptaba?"
-- "¿Cuál era la hipótesis nula?"
-
 ## Vamos a no dar la vuelta al problema
 
 ## La sesión de hoy va sobre:
@@ -188,47 +183,12 @@ $$
 
 :::
 
-## En PyMC queda así
+## En PyMC queda así: priori, datos y verosimilitud
 
 ```{python}
 #| label: modelo-moneda
 #| echo: true
-
-with pm.Model() as modelo_moneda:
-    p_cara = pm.Uniform("p_cara", lower=0, upper=1)
-    y = pm.Binomial("y", n=100, p=p_cara, observed=60)
-
-    idata_moneda = pm.sample(
-        draws=2000, tune=2000, chains=4, random_seed=SEMILLA, progressbar=False
-    )
-```
-
-## 1. Priori
-
-```{python}
-#| label: modelo-moneda-1
-#| echo: true
-#| eval: false
-#| code-line-numbers: "4"
-import pymc as pm
-
-with pm.Model() as modelo_moneda:
-    p_cara = pm.Uniform("p_cara", lower=0, upper=1)
-    y = pm.Binomial("y", n=100, p=p_cara, observed=60)
-
-    idata_moneda = pm.sample(
-        draws=2000, tune=2000, chains=4, random_seed=SEMILLA, progressbar=False
-    )
-```
-
-## 2. Datos y verosimilitud
-
-```{python}
-#| label: modelo-moneda-2
-#| echo: true
-#| eval: false
-#| code-line-numbers: "5"
-import pymc as pm
+#| code-line-numbers: "|4|5"
 
 with pm.Model() as modelo_moneda:
     p_cara = pm.Uniform("p_cara", lower=0, upper=1)
