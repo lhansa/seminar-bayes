@@ -438,6 +438,14 @@ CONTROLES = ["competitor_sales_control", "sentiment_score_control"]
 Datos simulados por Google Meridian, leídos por URL fijando la versión `v1.1.5`.
 :::
 
+::: {.notes}
+Si preguntan si recuperamos el ROI verdadero: Google no publica los valores generadores de
+este CSV, así que no hay contra qué comparar. No se puede decir "hemos acertado"; sí se
+puede decir que el modelo es consistente puertas adentro, que es lo que sí se enseña en la
+charla: la priori se mueve donde hay señal (el ROI) y se queda igual donde no la hay
+(`alpha`), y la predictiva posterior se contrasta contra los datos que sí tenemos.
+:::
+
 ## Los ingresos suben y bajan; la inversión, canal a canal, también
 
 ```{python}
@@ -747,6 +755,11 @@ minutos de explicación que no tienen nada de bayesiano.
 La `Uniform(0, 1)` de `alpha` no es pereza: es la respuesta honesta. Y al final del bloque
 hay que decir que la posteriori la devuelve casi tal cual: estos datos no distinguen un
 canal con memoria de una semana de otro con memoria de un mes.
+
+Si preguntan qué asume antes del principio de la serie: `rezagos` rellena con ceros, así
+que las primeras ocho semanas dan por hecho que no hubo inversión antes del primer dato.
+Es lo que hace Meridian, y con 156 semanas no le mueve el ROI a nadie, pero es la pregunta
+natural de quien ha leído el código.
 :::
 
 ## Y ahora `beta`. ¿Alguien tiene una intuición sobre `beta`?
@@ -970,6 +983,12 @@ Las dos cosas son verdad a la vez, como en el esqueleto.
 Y donde falla la predictiva posterior no es donde se espera: clava el centro y se pasa por
 abajo, generando semanas de facturación muy por debajo de la peor semana real. Un error
 gaussiano no sabe que la facturación tiene un suelo.
+
+Si preguntan si el 30 % de aquí y el 0,24 del `R²` del OLS son lo mismo: no. `1 − σ²` es el
+análogo bayesiano, no el `R²`; corre sobre el KPI ya estandarizado, no sobre los ingresos en
+euros del bloque anterior. Ni la métrica ni la escala coinciden, aunque la comparación nos
+favorezca. (Detalle sin importancia práctica si alguien lo pincha: es `1 − E[σ]²`, no
+`1 − E[σ²]`; la diferencia es de 0,25 puntos.)
 :::
 
 ## La pregunta que le importa a alguien
