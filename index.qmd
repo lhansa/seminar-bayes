@@ -398,34 +398,6 @@ ax.legend()
 plt.show()
 ```
 
-## Una priori plana no es "no elegir"
-
-Una uniforme en $\theta$ deja de ser plana si miras $\log\frac{\theta}{1-\theta}$.
-
-Elegir una priori plana también es elegir.
-
-```{python}
-#| label: graf-priori-plana
-
-rng_priori = np.random.default_rng(SEMILLA)
-p_priori = rng_priori.uniform(0, 1, 100_000)
-logit_priori = np.log(p_priori / (1 - p_priori))
-
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 3.5))
-ax1.hist(p_priori, bins=50, density=True, edgecolor="white", color="#666666", alpha=0.85)
-ax1.set_xlabel("p")
-ax1.set_ylabel("Densidad")
-ax1.set_title("Plana en p")
-
-ax2.hist(logit_priori, bins=60, range=(-8, 8), density=True,
-         edgecolor="white", color=ACENTO, alpha=0.85)
-ax2.set_xlabel("logit(p)")
-ax2.set_title("La misma priori, en logit(p)")
-
-plt.tight_layout()
-plt.show()
-```
-
 ## Resumen del bloque
 
 ::: {.incremental}
@@ -1118,4 +1090,131 @@ extensiones de verdad, no excusas por falta de tiempo.
 El notebook es público, pero desde aquí no hay atajo: se llega suscribiéndote.
 :::
 
-# leonardohansa.com
+# leonardohansa.com {#preguntas}
+
+![leonardohansa.com/regalo-bayes](img/qr.png){fig-align="center" width="240"}
+
+::: {.notes}
+Esta es la slide de los veinte minutos de preguntas, y por eso lleva el QR: va a estar
+proyectada todo el rato delante de una sala llena. Al abrir el turno, decirlo en voz alta
+una vez —"el notebook del radón está detrás de ese código"— y no volver a mencionarlo.
+
+Orden esperado de las preguntas, de más a menos probable:
+
+1. **"¿Y esto no es subjetivo?"** Cae seguro. Las elecciones del frecuentista también son
+   elecciones, solo que sin escribir; la priori al menos es auditable. Volver a "Priori
+   contra posteriori del ROI": donde se separan, han hablado los datos. Y conceder lo que
+   hay que conceder: sí cambia el resultado cuando los datos son flojos.
+2. **"¿Por dónde empiezo?"** Backup: `el-lunes`. Es la pregunta que da sentido a la charla
+   entera; no contestar con bibliografía.
+3. **"¿Y la saturación?"** Backup: `saturacion`. Está medido, no opinado.
+4. **"¿Cómo sé que la cadena ha convergido?"** Volver a la traza del esqueleto: traza que
+   parece ruido, `r_hat` por debajo de 1,01, cero divergencias.
+5. **"¿Cuánto tarda? ¿Necesito máquina?"** Tres segundos el esqueleto, minuto y pico el de
+   medios, y las dos cifras salen de un portátil. Decirlo con esas palabras.
+6. **"¿Y una priori no informativa?"** Backup: `priori-plana`.
+7. **"¿Cómo funciona el muestreo por dentro?"** No hace falta backup: la caminata del
+   Metropolis sigue en el recorrido, se vuelve a ella.
+8. **"¿Vale para mi TFM, para mi campo?"** Vale para cualquier sitio donde haya pocos
+   datos y algo sabido de antes, que es la situación de un TFM entero. El bucle no cambia:
+   lo que cambia es en qué unidades se escribe la priori. Enlazar con `el-lunes`.
+
+Para saltar a una slide de backup: `G`, el identificador y Enter.
+:::
+
+# Backup {#backup}
+
+::: {.notes}
+Estas slides no están en el recorrido: se salta a ellas. Con la presentación enfocada,
+`G` abre el salto directo de revealjs; se escribe el identificador y Enter.
+
+- `priori-plana` — "¿y una priori no informativa?"
+- `saturacion` — "¿y la saturación?"
+- `el-lunes` — "¿por dónde empiezo?"
+
+Si no sale el identificador, vale cualquier palabra que esté en la slide ("lunes",
+"Hill"): el mismo salto busca por texto. El menú (☰, abajo a la izquierda) llega hasta
+"Backup" y no hasta cada slide, porque están apiladas debajo de esta; desde aquí se baja
+con la flecha de abajo.
+
+Conviene probarlo una vez antes de empezar, con la sala todavía vacía.
+:::
+
+## Una priori plana no es "no elegir" {#priori-plana}
+
+Una uniforme en $\theta$ deja de ser plana si miras $\log\frac{\theta}{1-\theta}$.
+
+Elegir una priori plana también es elegir.
+
+```{python}
+#| label: graf-priori-plana
+
+rng_priori = np.random.default_rng(SEMILLA)
+p_priori = rng_priori.uniform(0, 1, 100_000)
+logit_priori = np.log(p_priori / (1 - p_priori))
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 3.5))
+ax1.hist(p_priori, bins=50, density=True, edgecolor="white", color="#666666", alpha=0.85)
+ax1.set_xlabel("p")
+ax1.set_ylabel("Densidad")
+ax1.set_title("Plana en p")
+
+ax2.hist(logit_priori, bins=60, range=(-8, 8), density=True,
+         edgecolor="white", color=ACENTO, alpha=0.85)
+ax2.set_xlabel("logit(p)")
+ax2.set_title("La misma priori, en logit(p)")
+
+plt.tight_layout()
+plt.show()
+```
+
+::: {.notes}
+Si preguntan por Jeffreys: para la binomial es `Beta(1/2, 1/2)`, y su gracia es que es
+invariante a la reparametrización, que es justo lo que la uniforme no es. Con 100 tiradas
+da lo mismo que la uniforme hasta la tercera cifra. El argumento no es cuál es la buena:
+es que las tres son elecciones y solo una de ellas se presenta como si no lo fuera.
+:::
+
+## Con Hill el modelo explica menos {#saturacion}
+
+|                         | Sin Hill | Con Hill |
+|-------------------------|---------:|---------:|
+| `sigma`                 |    0,839 |    0,859 |
+| Anchura del HDI del ROI |        1 |      1,6 |
+| `target_accept`         |     0,95 |     0,97 |
+| Muestreo                |  1,2 min |  2,5 min |
+
+La posteriori de `ec` devuelve su priori. El orden de los canales por ROI no se mueve.
+
+::: aside
+Medido en `scripts/comparar_hill.py`, sobre los mismos datos y el mismo muestreo.
+:::
+
+::: {.notes}
+La lectura de la tabla es la última línea: la posteriori de `ec` devuelve la priori
+—mediana de 0,99 a entre 1,06 y 1,27, desviación clavada en 0,62—, así que estos datos no
+saben decir dónde satura cada canal. Y como no lo saben, el parámetro de más solo añade
+incertidumbre: el HDI del ROI se ensancha un 60 % y el modelo explica menos.
+
+Y el remate, que es lo que hay que contar si hay profesores delante: con Hill, tres
+canales pasan de ROI mediano por debajo de 1 a por encima, y su probabilidad de perder
+dinero cae unos veinte puntos. Eso se mueve **sin que los datos hayan dicho nada**, porque
+quien lo mueve es un parámetro que no está identificado. Por eso la frase final de la
+charla se construye sobre los dos canales cuyo ROI aguanta las dos versiones.
+:::
+
+## El lunes por la mañana {#el-lunes}
+
+- `pip install pymc arviz` y a correr en tu portátil: no hace falta nada más.
+- Empieza por un problema que ya tengas resuelto con una regresión, para tener con qué comparar.
+- Y el primer paso no es ajustar: es escribir la priori en tus unidades y simular desde ella antes de mirar los datos.
+
+::: {.notes}
+Tres frases y ninguna bibliográfica. Si la pregunta viene de un estudiante con un TFM
+entre manos, el ejemplo es el suyo: el modelo que ya ha ajustado, las prioris escritas en
+las unidades de su campo, y la simulación previa antes de tocar sus datos. Las referencias
+están en la slide de profundizar y se dan después, no antes.
+
+Los tres puntos salen a la vez y no uno a uno: a esta slide se llega de un salto, en medio
+de una respuesta, y no hay guion que ir desplegando.
+:::
