@@ -6,7 +6,7 @@ Material del seminario **"Inferencia bayesiana en la empresa"**, una hora sobre 
 
 Las slides se publican en GitHub Pages. El recorrido son tres bloques: la moneda (60 caras en 100 tiradas, frecuentista vs. bayesiano, resuelta por simulación), el esqueleto del KPI (nivel y controles) y el modelo de medios (adstock geométrico, con la priori puesta sobre el ROI en lugar de sobre los coeficientes). El foco son **las dos cosas que se practican mal**: elegir prioris y defenderlas simulando desde ellas antes de ver los datos, y diagnosticar lo que sale.
 
-El seminario se está rehaciendo: `index.qmd`, las slides nuevas, renderiza ya los tres bloques —la moneda, el esqueleto del KPI y el modelo de medios—. Falta el cierre.
+`index.qmd`, las slides nuevas, renderiza ya el seminario entero: los tres bloques —la moneda, el esqueleto del KPI y el modelo de medios— y el cierre.
 
 Aparte de las slides habrá un notebook, `notebooks/radon.ipynb`: el recorrido del radón de Minnesota (agrupado → *unpooled* → jerárquico), narrativo y sin ejercicios. No es material de la charla, y está por escribir.
 
@@ -17,7 +17,7 @@ Público objetivo: profesionales de datos que manejan Python y regresión, pero 
 ## Estructura
 
 ```
-index.qmd                         slides del seminario (los tres bloques; falta el cierre)
+index.qmd                         slides del seminario, completo (los tres bloques y el cierre)
 index_radon.qmd                   slides del formato anterior, archivadas
 custom.scss                       tema de las slides (morado de marca #800080 sobre simple)
 _quarto.yml                       configuración del proyecto Quarto
