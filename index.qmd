@@ -822,9 +822,15 @@ La priori se escribe en las unidades en las que la gente sabe pensar. Lo demás 
 ::: {.notes}
 Esta es la lección del bloque, no un detalle de implementación. Con la priori apretada del
 esqueleto, `mu` no puede bajar el nivel base, el modelo se pelea con su propia priori y lo
-paga el muestreador semanas después, cuando ya nadie se acuerda de esta slide. Y la trampa
-de la trampa: la simulación previa no detecta este error, porque la mediana simulada casi
-no se mueve si aprietas `mu`. Se ve en la posteriori, y lo vemos dentro de dos slides.
+paga el muestreador semanas después, cuando ya nadie se acuerda de esta slide.
+
+Y no hace falta esperar a la posteriori para saberlo: está en el panel de la derecha de la
+slide anterior. Esa contribución de medios, dividida entre las 156 semanas y la desviación
+típica del KPI, es el nivel que `mu` tiene que compensar. Con la priori del ROI, esa cuenta
+da una mediana de −3,8, y se sale del intervalo [−1, 1] el 99,8 % de las veces: tres sigmas
+de la priori del esqueleto, antes de ver un dato. La simulación previa **sí** detecta el
+problema. Lo que no lo detecta es mirar solo el histograma de `y`, que casi no se mueve si
+aprietas `mu`. Por eso la previa se mira parámetro a parámetro y no solo en el KPI.
 :::
 
 ## El modelo entero
@@ -989,6 +995,20 @@ eje.legend()
 plt.show()
 ```
 
+::: {.notes}
+Antes de que lo diga alguien desde la tercera fila: este intervalo no es más corto que el
+de la regresión del principio por ser bayesiano. Es más corto por tres cosas distintas y
+solo una lo es. El adstock, que es estructura: reparte la inversión en el tiempo en vez de
+pegarla entera a la semana en que se pagó. La priori, que es regularización, y eso también
+lo hace un ridge. Y la interpretación, que es lo único que compro aquí: poder decir "con
+probabilidad del 90 %" sobre este intervalo y, dos slides más allá, enseñar cuánto de él lo
+he puesto yo. Eso segundo no lo hace ridge.
+
+Y que nadie se vaya creyendo que ha comprado precisión: el `R²` del OLS era 0,24 y este
+modelo explica alrededor del 30 % de la varianza. Seis puntos. Lo que cambia no es cuánto
+explica: es qué se puede decir de lo que explica.
+:::
+
 ## La frase, sin la palabra "posteriori" dentro
 
 ```{python}
@@ -1013,6 +1033,13 @@ ese canal daría más información que otro trimestre entero mirando el históri
 Cuidado con la conclusión fácil de señalar un canal y decir "este pierde dinero": esa frase
 depende de supuestos que estos datos no sostienen —la saturación, sin ir más lejos, la
 mueve veinte puntos—, y no es la que hay que llevarse a casa.
+
+Y el ROI de aquí es un promedio sobre el gasto observado, contribución entre inversión,
+mientras que subir presupuesto es una decisión sobre el euro siguiente, que es el marginal.
+Coinciden porque el modelo es lineal en el adstock, es decir, porque no hay saturación. Con
+Hill dentro dejarían de coincidir: el medio seguiría sirviendo para repartir el crédito,
+pero para mover un euro haría falta el marginal. Esa es la otra razón por la que hoy se
+queda fuera.
 :::
 
 ## Priori contra posteriori del ROI: la diferencia es lo que han dicho los datos
