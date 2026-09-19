@@ -1,6 +1,8 @@
 # seminar-bayes
 
-[![Abrir en Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/lhansa/seminar-bayes/blob/main/notebooks/taller.ipynb)
+[![Abrir el notebook del radón en Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/lhansa/seminar-bayes/blob/main/notebooks/radon.ipynb)
+
+Notebook archivado: [![Abrir el taller archivado en Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/lhansa/seminar-bayes/blob/main/notebooks/taller.ipynb)
 
 Material del seminario **"Inferencia bayesiana en la empresa"**, una hora sobre los datos de *marketing mix* simulados por [Google Meridian](https://github.com/google/meridian).
 
@@ -8,7 +10,7 @@ Las slides se publican en GitHub Pages. El recorrido son tres bloques: la moneda
 
 `index.qmd`, las slides nuevas, renderiza ya el seminario entero: los tres bloques —la moneda, el esqueleto del KPI y el modelo de medios— y el cierre.
 
-Aparte de las slides habrá un notebook, `notebooks/radon.ipynb`: el recorrido del radón de Minnesota (agrupado → *unpooled* → jerárquico), narrativo y sin ejercicios. No es material de la charla, y está por escribir.
+Aparte de las slides está `notebooks/radon.ipynb`: el recorrido del radón de Minnesota (agrupado → *unpooled* → jerárquico), narrativo y sin ejercicios. No es material de la charla: es el regalo de suscripción, y sobre él se graba el vídeo de los modelos jerárquicos.
 
 **Material archivado.** [`index_radon.qmd`](index_radon.qmd), [`notebooks/taller.ipynb`](notebooks/taller.ipynb) y [`notebooks/taller-solucion.ipynb`](notebooks/taller-solucion.ipynb) son del formato anterior, de dos horas: no son material a mantener al día, son cantera de posibles talleres futuros.
 
@@ -24,7 +26,7 @@ _quarto.yml                       configuración del proyecto Quarto
 src/estilo.py                     estilo común de matplotlib para las slides
 data/radon.csv                    919 mediciones de radón en Minnesota, de Gelman (copia offline; el notebook las lee por URL)
 data/meridian_national.csv        156 semanas de marketing mix simuladas por Google (copia offline; el material las lee por URL)
-notebooks/radon.ipynb             el recorrido del radón, narrativo y sin ejercicios (por escribir)
+notebooks/radon.ipynb             el recorrido del radón, narrativo y sin ejercicios (regalo de suscripción)
 notebooks/taller.ipynb            taller archivado
 notebooks/taller-solucion.ipynb   el taller archivado, con los ejercicios resueltos
 notebooks/idata/                  posteriori del modelo de medios, guardada a mano (no la usa nadie)
