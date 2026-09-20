@@ -49,8 +49,10 @@ Abrir aquí y no alargarse: la moneda es el gancho, no el tema. Se lanza el dato
 la pregunta en el aire y se pasa. Nada de definir inferencia, ni de adelantar que luego
 habrá dos enfoques. En la siguiente slide se pide respuesta a mano alzada, se cuentan los
 síes y se sigue; no se abre debate, que se come el bloque. La moneda entera, hasta
-"Vamos a no dar la vuelta al problema", son unos quince minutos. "Quién soy" es un
-minuto: a qué me dedico y por qué doy este seminario. No es un currículum.
+"Vamos a no dar la vuelta al problema", no puede pasar de la cuarta parte de la charla:
+lo que se gaste ahí se lo quita al bloque de medios. "Quién soy" es un minuto: de dónde
+vengo y por qué doy este seminario. No es un currículum, pero sí es la parte de empresa:
+es la credencial que esta sala ha venido a comprar.
 :::
 
 ## ¿Crees que la moneda favorece cara frente a cruz?
@@ -59,7 +61,9 @@ minuto: a qué me dedico y por qué doy este seminario. No es un currículum.
 
 ## Quién soy
 
-<!-- TODO: slide de presentación del ponente. La rellena Leonardo. -->
+<!-- TODO: slide de presentación del ponente. La rellena Leonardo.
+     Un minuto y sin currículum, pero con la parte de empresa delante: de dónde vengo,
+     qué decisiones he visto tomar con estos modelos y por qué doy este seminario. -->
 
 # Primer intento: simular
 
@@ -370,7 +374,7 @@ entre los dos marcos. Y no hay truco ni comparación tramposa: el número es el 
 Lo que cambia no es el número, es la frase que puedes decir sobre él. "Hay un 95 % de
 probabilidad de que $p$ esté en este intervalo" frente a "si repitiera el experimento
 muchas veces, el 95 % de esos intervalos contendría el $p$ verdadero". La primera es la
-que de verdad quieres decir en una reunión.
+que vas a querer decir cuando te toque defender un número en una reunión.
 
 No generalizar en voz alta: la coincidencia depende de la hipótesis de una cola y de la
 priori plana. Con hipótesis nula puntual ($p = 0{,}5$ en vez de $p \leq 0{,}5$) se rompe,
@@ -463,7 +467,7 @@ correlaciones.index = correlaciones.columns = CANALES
 - Y los canales se mueven juntos: `Channel2`, `Channel3` y `Channel4` correlacionan entre sí por encima de `{python} f"{min(correlaciones.loc['Channel2', 'Channel3'], correlaciones.loc['Channel2', 'Channel4'], correlaciones.loc['Channel3', 'Channel4']):.2f}"`, y son `{python} len(df)` filas para separarlos, más el retraso con el que vende cada anuncio.
 
 ::: aside
-Esto es lo que se lleva el equipo de marketing a la reunión.
+Esto es lo que te van a poner delante en una reunión de marketing.
 :::
 
 ## No es que falte un modelo más grande
@@ -856,14 +860,15 @@ Mediana del `{python} f"{np.median(pct_previo):.0f}"` %, percentil 95 del `{pyth
 
 ::: {.notes}
 El panel de la izquierda es el de siempre: ¿considera el modelo normales unos ingresos
-imposibles? El de la derecha es el que importa, y es la pregunta que hay que hacerle a
-cualquier MMM, propio o de proveedor: qué contribución de medios asume tu priori antes de
-mirar los datos. Si no saben responderla, el número que te van a dar es el suyo, no el de
-los datos.
+imposibles? El de la derecha es el que importa, y es la pregunta que le vas a tener que
+hacer a cualquier MMM, propio o de proveedor: qué contribución de medios asume tu priori
+antes de mirar los datos. Si no saben responderla, el número que te den será el suyo, no
+el de los datos.
 
 Aquí el percentil 95 dice que le parece perfectamente normal que seis de cada diez euros
-facturados vengan de los anuncios. Si eso fuera verdad, no harían falta modelos. Con el
-jefe delante, apretar la sigma de la lognormal, no su centro: el problema es la cola.
+facturados vengan de los anuncios. Si eso fuera verdad, no harían falta modelos. Cuando
+tengas al jefe delante, aprieta la sigma de la lognormal, no su centro: el problema es la
+cola.
 :::
 
 ## Catorce parámetros en vez de tres: ya no son tres segundos, y hay que volver a mirar
@@ -1060,7 +1065,7 @@ es cómo se reparte en el tiempo. Es estructural, no de tamaño de muestra.
 
 :::
 
-## Lo que no ha cabido en una hora
+## Lo que no ha cabido
 
 ::: {.incremental}
 
@@ -1079,10 +1084,21 @@ extensiones de verdad, no excusas por falta de tiempo.
 
 ## Para profundizar
 
+- McElreath, *Statistical Rethinking*: el que he mencionado antes. Libro y clases en YouTube, enteras y gratis.
+- Gelman y Hill, *Data Analysis Using Regression and Multilevel/Hierarchical Models*: empieza en la regresión que ya sabes y termina en multinivel.
 - `google/meridian`, de donde sale este modelo.
 - PyMC, para escribirlo.
-- Gelman y Hill, *Data Analysis Using Regression and Multilevel/Hierarchical Models*.
-- McElreath, *Statistical Rethinking*, libro y sus clases en YouTube.
+
+::: {.notes}
+McElreath va primero porque es el único que se ha nombrado durante la charla —en el
+muestreo, con el capítulo del rey Markov—; aquí no se presenta, se recoge. Si preguntan
+por dónde empezar a leer, es ese y no hay segunda opción que dar.
+
+Gelman y Hill se queda a propósito, no por inercia: entró con el radón, que ya no está en
+la charla, y aun así es el único de la lista que arranca donde arranca esta sala
+—regresión— y acaba en los jerárquicos de la slide anterior. Esa es la línea que lo
+justifica, y va escrita en la slide para no tener que decirla.
+:::
 
 ## Te suscribes y te llevas el notebook del radón, con el vídeo de los jerárquicos
 
