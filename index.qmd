@@ -768,6 +768,15 @@ minutos de explicación que no tienen nada de bayesiano.
 La `Uniform(0, 1)` de `alpha` no es pereza: es la respuesta honesta. Y al final del bloque
 hay que decir que la posteriori la devuelve casi tal cual: estos datos no distinguen un
 canal con memoria de una semana de otro con memoria de un mes.
+
+Y el porqué está justo en el aside: como los pesos suman uno, sumar el adstock de un canal a
+lo largo de la serie da prácticamente su inversión total, valga `alpha` 0,1 o 0,9 —solo
+cambian los primeros rezagos, donde la serie aún no ha empezado—. O sea que la contribución
+total del canal no depende de `alpha`: lo único que `alpha` mueve es el reparto en el tiempo,
+y eso es lo que habría que distinguir con 156 semanas ruidosas y tres canales que van juntos.
+No es que falten datos: es que la normalización deja a `alpha` casi sin señal por
+construcción. Y se queda así, porque es lo que hace limpia la cuenta de `beta` a partir del
+ROI.
 :::
 
 ## Y ahora `beta`. ¿Alguien tiene una intuición sobre `beta`?
@@ -1091,6 +1100,10 @@ número lo has puesto tú y lo estás sacando con otro nombre. Lo mismo pasa con
 `alpha`: salen prácticamente uniformes, así que estos datos no distinguen un canal con
 memoria de una semana de otro con memoria de un mes. Eso no es un fallo del muestreador, es
 información.
+
+Si preguntan por qué, no decir "son pocos datos": los pesos del adstock suman uno, así que la
+contribución total de un canal es la misma con cualquier `alpha` y lo único que `alpha` cambia
+es cómo se reparte en el tiempo. Es estructural, no de tamaño de muestra.
 :::
 
 # Cierre
