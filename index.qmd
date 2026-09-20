@@ -398,6 +398,27 @@ ax.legend()
 plt.show()
 ```
 
+::: {.notes}
+Las cifras, por si alguien las saca en el móvil: el intervalo de credibilidad de esta
+slide es [0,503, 0,692]. El IC de Wilson al 95 % del mismo dato es [0,502, 0,691].
+Coinciden en el tercer decimal. Y el p-valor exacto de una cola de la slide de la moneda,
+0,0284, casi coincide con el complementario de la probabilidad de sesgo de dos slides
+atrás, 1 − 0,977 = 0,0230.
+
+No es casualidad: con hipótesis de una cola y priori plana hay una correspondencia exacta
+entre los dos marcos. Y no hay truco ni comparación tramposa: el número es el mismo.
+
+Lo que cambia no es el número, es la frase que puedes decir sobre él. "Hay un 95 % de
+probabilidad de que $p$ esté en este intervalo" frente a "si repitiera el experimento
+muchas veces, el 95 % de esos intervalos contendría el $p$ verdadero". La primera es la
+que de verdad quieres decir en una reunión.
+
+No generalizar en voz alta: la coincidencia depende de la hipótesis de una cola y de la
+priori plana. Con hipótesis nula puntual ($p = 0{,}5$ en vez de $p \leq 0{,}5$) se rompe,
+y bastante —ahí está la paradoja de Lindley, que no hace falta nombrar si nadie pregunta
+tan concreto.
+:::
+
 ## Resumen del bloque
 
 ::: {.incremental}
