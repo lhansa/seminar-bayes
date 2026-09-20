@@ -49,10 +49,10 @@ Abrir aquí y no alargarse: la moneda es el gancho, no el tema. Se lanza el dato
 la pregunta en el aire y se pasa. Nada de definir inferencia, ni de adelantar que luego
 habrá dos enfoques. En la siguiente slide se pide respuesta a mano alzada, se cuentan los
 síes y se sigue; no se abre debate, que se come el bloque. La moneda entera, hasta
-"Vamos a no dar la vuelta al problema", no puede pasar de la cuarta parte de la charla:
-lo que se gaste ahí se lo quita al bloque de medios. "Quién soy" es un minuto: de dónde
-vengo y por qué doy este seminario. No es un currículum, pero sí es la parte de empresa:
-es la credencial que esta sala ha venido a comprar.
+"Vamos a no dar la vuelta al problema", no puede pasar de ocho minutos: lo que se gaste ahí
+se lo quita al bloque de medios. "Quién soy" es un minuto: de dónde vengo y por qué doy este
+seminario. No es un currículum, pero sí es la parte de empresa: es la credencial que esta
+sala ha venido a comprar.
 :::
 
 ## ¿Crees que la moneda favorece cara frente a cruz?
@@ -112,14 +112,20 @@ ax.set_title(f"p-valor simulado ≈ {p_valor_sim:.3f}")
 plt.show()
 ```
 
-## Ese número es una aproximación a lo que se suele obtener con un contraste de hipótesis
-
-$$
-H_0: \theta = 0{,}5 \qquad \text{frente a} \qquad H_1: \theta > 0{,}5
-$$
-
 ::: aside
-Hay fórmulas para calcularlo sin simular, pero no nos importan ahora.
+Ese número es el p-valor: lo mismo que da el contraste de siempre, pero sin fórmulas.
+:::
+
+::: {.notes}
+El nombre se dice de palabra y no se proyecta: esto es el contraste de toda la vida, $H_0:
+\theta = 0{,}5$ frente a $H_1: \theta > 0{,}5$, y esta sala se lo sabe de memoria. Escribirlo
+sería la parte de la charla que menos les enseña.
+
+Pero decirlo no es opcional, y el sitio es este: si dentro de dos slides no ha quedado dicho
+que lo que acabamos de simular es el contraste de siempre, el giro de "He dado la vuelta al
+problema" no tiene contra qué girar.
+
+Si alguien pregunta: sí, hay fórmulas para calcularlo sin simular, y no nos importan ahora.
 :::
 
 ## ¿Te has dado cuenta de lo que acabo de hacer?
@@ -573,6 +579,11 @@ Las prioris de Meridian no son un error: su modelo es jerárquico por regiones, 
 observaciones repartidas por geografías, y ahí los datos las tapan. Aquí hay 156 semanas y una
 sola serie: no las tapan, y una empresa vendiendo menos que nada varias semanas al año es lo
 que el modelo se cree antes de mirar un solo dato.
+
+Y decirlo una vez con su nombre: esto que está proyectado es un **análisis de sensibilidad a
+la priori**. Dos juegos de prioris sobre los mismos datos, y uno de ellos factura en negativo.
+Con profesores en la sala, nombrarlo cuesta una palabra y luego vale por medio argumento
+cuando llegue la pregunta de si esto no es subjetivo.
 :::
 
 ## Se ajusta en tres segundos, y antes de leer la posteriori miro si ha funcionado
@@ -758,6 +769,12 @@ casi igual de probable perder que ganar". Es honesta para quien no tiene ni idea
 es enorme, y se le pone igual a los cinco canales, cuando uno se lleva siete veces más
 presupuesto que otro. Que Meridian la traiga por defecto no es una recomendación: es lo
 único que puede hacer una librería que no sabe de qué empresa le hablas.
+
+Si la pregunta de la subjetividad cae aquí —y aquí es donde más papeletas tiene de caer
+antes de tiempo—, la versión corta y seguir: sí, esto es una elección, y está escrita. Las
+del frecuentista también son elecciones —qué covariables entran, qué forma funcional, dónde
+se corta el p-valor— solo que no se escriben en ninguna tabla. La respuesta entera se da al
+final del bloque, con el gráfico de priori contra posteriori delante; no adelantarla aquí.
 :::
 
 ## `beta` deja de ser un parámetro: es una cuenta
@@ -1050,6 +1067,31 @@ información.
 Si preguntan por qué, no decir "son pocos datos": los pesos del adstock suman uno, así que la
 contribución total de un canal es la misma con cualquier `alpha` y lo único que `alpha` cambia
 es cómo se reparte en el tiempo. Es estructural, no de tamaño de muestra.
+
+**"¿Y esto no es subjetivo?"** De las nueve preguntas previstas, esta es la que cae seguro, y
+esta slide es el sitio donde contestarla. Cuatro apoyos y una concesión, y cabe en un minuto:
+
+Uno: las decisiones del frecuentista también son elecciones, solo que sin escribir. Qué
+covariables entran, qué forma funcional, dónde se corta el p-valor, cuándo se deja de
+recoger datos. La regresión del principio decidió que el anuncio de esta semana no vende
+nada la semana que viene, que es un supuesto brutal, y no aparecía en ninguna tabla. La
+priori al menos está escrita y se puede auditar.
+
+Dos: y se puede medir cuánto ha aportado. Es esta slide, señalarla: donde la posteriori se
+separa de la priori, han hablado los datos; donde se le parece, el número lo puse yo.
+
+Tres: y lo decimos cuando la respuesta es incómoda. Los cinco `alpha` salen prácticamente
+como la priori, está en esta misma slide, y no se esconde: se llama información.
+
+Cuatro: y ya hemos hecho un análisis de sensibilidad delante de ellos, en el bloque del
+esqueleto, comparando nuestras prioris con las de Meridian. Solo hay que recordarlo con
+ese nombre.
+
+Y la concesión, que es lo que hace creíble lo demás: sí es una elección, y sí cambia el
+resultado cuando los datos son flojos. El ejemplo está medido: con saturación de Hill tres
+canales pasan de ROI mediano por debajo de 1 a por encima sin que los datos hayan dicho
+nada (*backup*: `saturacion`). Conceder eso y enseñar cómo se detecta es más fuerte que
+negarlo.
 :::
 
 # Cierre
@@ -1119,10 +1161,10 @@ una vez —"el notebook del radón está detrás de ese código"— y no volver 
 
 Orden esperado de las preguntas, de más a menos probable:
 
-1. **"¿Y esto no es subjetivo?"** Cae seguro. Las elecciones del frecuentista también son
-   elecciones, solo que sin escribir; la priori al menos es auditable. Volver a "Priori
-   contra posteriori del ROI": donde se separan, han hablado los datos. Y conceder lo que
-   hay que conceder: sí cambia el resultado cuando los datos son flojos.
+1. **"¿Y esto no es subjetivo?"** Cae seguro. Volver a "Priori contra posteriori del ROI":
+   la respuesta montada —los cuatro apoyos y la concesión— está en la nota del ponente de
+   esa misma slide. En una línea: las elecciones del frecuentista también son elecciones,
+   solo que sin escribir; esta al menos se audita, y ahí se ve cuánto ha aportado.
 2. **"¿Por dónde empiezo?"** Backup: `el-lunes`. Es la pregunta que da sentido a la charla
    entera; no contestar con bibliografía.
 3. **"¿Y la saturación?"** Backup: `saturacion`. Está medido, no opinado.
