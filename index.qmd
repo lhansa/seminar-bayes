@@ -142,11 +142,6 @@ responde a otra pregunta. Si no se dice, alguien entiende "entonces el contraste
 sirve" y ahí se va el resto del bloque.
 :::
 
-## El p-valor me resulta tremendamente lioso
-
-- "Si el p-valor es bajo, ¿rechazaba o aceptaba?"
-- "¿Cuál era la hipótesis nula?"
-
 ## Vamos a no dar la vuelta al problema
 
 ## La sesión de hoy va sobre:
@@ -188,47 +183,12 @@ $$
 
 :::
 
-## En PyMC queda así
+## En PyMC queda así: priori, datos y verosimilitud
 
 ```{python}
 #| label: modelo-moneda
 #| echo: true
-
-with pm.Model() as modelo_moneda:
-    p_cara = pm.Uniform("p_cara", lower=0, upper=1)
-    y = pm.Binomial("y", n=100, p=p_cara, observed=60)
-
-    idata_moneda = pm.sample(
-        draws=2000, tune=2000, chains=4, random_seed=SEMILLA, progressbar=False
-    )
-```
-
-## 1. Priori
-
-```{python}
-#| label: modelo-moneda-1
-#| echo: true
-#| eval: false
-#| code-line-numbers: "4"
-import pymc as pm
-
-with pm.Model() as modelo_moneda:
-    p_cara = pm.Uniform("p_cara", lower=0, upper=1)
-    y = pm.Binomial("y", n=100, p=p_cara, observed=60)
-
-    idata_moneda = pm.sample(
-        draws=2000, tune=2000, chains=4, random_seed=SEMILLA, progressbar=False
-    )
-```
-
-## 2. Datos y verosimilitud
-
-```{python}
-#| label: modelo-moneda-2
-#| echo: true
-#| eval: false
-#| code-line-numbers: "5"
-import pymc as pm
+#| code-line-numbers: "|4|5"
 
 with pm.Model() as modelo_moneda:
     p_cara = pm.Uniform("p_cara", lower=0, upper=1)
@@ -397,6 +357,27 @@ ax.set_title(f"Intervalo de credibilidad 95%: [{hdi[0]:.3f}, {hdi[1]:.3f}]")
 ax.legend()
 plt.show()
 ```
+
+::: {.notes}
+Las cifras, por si alguien las saca en el móvil: el intervalo de credibilidad de esta
+slide es [0,503, 0,692]. El IC de Wilson al 95 % del mismo dato es [0,502, 0,691].
+Coinciden en el tercer decimal. Y el p-valor exacto de una cola de la slide de la moneda,
+0,0284, casi coincide con el complementario de la probabilidad de sesgo de dos slides
+atrás, 1 − 0,977 = 0,0230.
+
+No es casualidad: con hipótesis de una cola y priori plana hay una correspondencia exacta
+entre los dos marcos. Y no hay truco ni comparación tramposa: el número es el mismo.
+
+Lo que cambia no es el número, es la frase que puedes decir sobre él. "Hay un 95 % de
+probabilidad de que $p$ esté en este intervalo" frente a "si repitiera el experimento
+muchas veces, el 95 % de esos intervalos contendría el $p$ verdadero". La primera es la
+que de verdad quieres decir en una reunión.
+
+No generalizar en voz alta: la coincidencia depende de la hipótesis de una cola y de la
+priori plana. Con hipótesis nula puntual ($p = 0{,}5$ en vez de $p \leq 0{,}5$) se rompe,
+y bastante —ahí está la paradoja de Lindley, que no hace falta nombrar si nadie pregunta
+tan concreto.
+:::
 
 ## Resumen del bloque
 
@@ -756,6 +737,15 @@ La `Uniform(0, 1)` de `alpha` no es pereza: es la respuesta honesta. Y al final 
 hay que decir que la posteriori la devuelve casi tal cual: estos datos no distinguen un
 canal con memoria de una semana de otro con memoria de un mes.
 
+Y el porqué está justo en el aside: como los pesos suman uno, sumar el adstock de un canal a
+lo largo de la serie da prácticamente su inversión total, valga `alpha` 0,1 o 0,9 —solo
+cambian los primeros rezagos, donde la serie aún no ha empezado—. O sea que la contribución
+total del canal no depende de `alpha`: lo único que `alpha` mueve es el reparto en el tiempo,
+y eso es lo que habría que distinguir con 156 semanas ruidosas y tres canales que van juntos.
+No es que falten datos: es que la normalización deja a `alpha` casi sin señal por
+construcción. Y se queda así, porque es lo que hace limpia la cuenta de `beta` a partir del
+ROI.
+
 Si preguntan qué asume antes del principio de la serie: `rezagos` rellena con ceros, así
 que las primeras ocho semanas dan por hecho que no hubo inversión antes del primer dato.
 Es lo que hace Meridian, y con 156 semanas no le mueve el ROI a nadie, pero es la pregunta
@@ -1089,6 +1079,10 @@ número lo has puesto tú y lo estás sacando con otro nombre. Lo mismo pasa con
 `alpha`: salen prácticamente uniformes, así que estos datos no distinguen un canal con
 memoria de una semana de otro con memoria de un mes. Eso no es un fallo del muestreador, es
 información.
+
+Si preguntan por qué, no decir "son pocos datos": los pesos del adstock suman uno, así que la
+contribución total de un canal es la misma con cualquier `alpha` y lo único que `alpha` cambia
+es cómo se reparte en el tiempo. Es estructural, no de tamaño de muestra.
 :::
 
 # Cierre
