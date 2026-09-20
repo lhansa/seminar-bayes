@@ -278,7 +278,10 @@ pasos son subida, no muestreo. Eso es el `tune=2000` de la slide del modelo, que
 para colocarse y luego tira; es la zona sombreada.
 
 Y la línea de honestidad, que hay que decirla: PyMC no hace exactamente esto, hace NUTS, que
-propone usando el gradiente y es mucho más listo. La idea de fondo es la misma.
+propone usando el gradiente y es mucho más listo. La idea de fondo es la misma. Y de paso,
+por si alguien pregunta por qué el dibujo no es la traza de PyMC: en NUTS las muestras salen
+casi independientes, el recorrido parece ruido blanco y ahí no se ve ni un paso corto ni un
+rechazo. Justo lo que esta slide ha venido a enseñar.
 :::
 
 ## El montón que deja el paseo es la posteriori
@@ -309,10 +312,14 @@ Muestrear solo necesita el numerador: $P(p \mid \text{datos}) \propto P(\text{da
 :::
 
 ::: {.notes}
-Ahora se ve la cadena entera, los dos mil pasos, y al lado el montón que deja. Aquí está el
-truco: como el paso se acepta según la plausibilidad relativa, la cadena acaba pasando en cada
-zona un tiempo proporcional a lo plausible que es esa zona. El recuento de visitas no se
-parece a la posteriori: es la posteriori. Y no se ha resuelto ninguna integral por el camino.
+Es la misma cadena de antes, ahora entera: los dos mil pasos, con los doscientos de la slide
+anterior metidos en el primer décimo. La banda gris del principio es la misma subida inicial,
+aunque aquí ya no lleve leyenda, y al lado está el montón que deja el resto.
+
+Y aquí está el truco, que es el título: como el paso se acepta según la plausibilidad
+relativa, la cadena acaba pasando en cada zona un tiempo proporcional a lo plausible que es
+esa zona. El recuento de visitas no se parece a la posteriori: es la posteriori. Y no se ha
+resuelto ninguna integral por el camino.
 
 Si conviene, volver un segundo a la slide del histograma de PyMC: es el mismo dibujo.
 
