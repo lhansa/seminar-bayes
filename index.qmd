@@ -216,10 +216,10 @@ ax.legend()
 plt.show()
 ```
 
-## Esa distribución no se ha calculado: se ha recorrido
+## El montón que deja el paseo es la posteriori
 
 ```{python}
-#| label: graf-caminata
+#| label: graf-caminata-posteriori
 
 rng_mcmc = np.random.default_rng(SEMILLA)
 
@@ -233,7 +233,7 @@ def log_numerador(p):
 
 n_pasos = 2000
 subida = 50
-zoom = 200  # los pasos que se ven de cerca: con los dos mil no se distingue ninguno
+zoom = 200  # los pasos que enseña la slide de backup: con los dos mil no se distingue ninguno
 cadena = np.empty(n_pasos)
 
 actual = 0.10  # arranque deliberadamente malo: la cadena no sabe nada
@@ -258,39 +258,11 @@ def dibuja_recorrido(ax, hasta=n_pasos, detalle=False):
     ax.set_ylim(0, 0.8)
 
 
-fig, ax = plt.subplots(figsize=(9, 4))
-dibuja_recorrido(ax, hasta=zoom, detalle=True)
-ax.legend(loc="lower right")
-plt.show()
-```
-
-::: {.notes}
-La regla, en cuatro frases: estás en un valor de $p$, propones otro cercano, miras cuántas
-veces más plausible es —priori por verosimilitud, nada más— y si es mejor, te mueves; si es
-peor, te mueves con esa probabilidad. Dos mil veces.
-
-Aquí se ven los doscientos primeros pasos de esos dos mil, porque con los dos mil no se
-distingue ninguno. Señalar los tramos planos: son los rechazos, los pasos en los que la
-cadena propone un valor peor y se queda donde estaba. Un tercio de las veces, más o menos.
-
-El arranque en 0,10 es a propósito: la cadena no sabe nada cuando empieza, y los primeros
-pasos son subida, no muestreo. Eso es el `tune=2000` de la slide del modelo, que PyMC usa
-para colocarse y luego tira; es la zona sombreada.
-
-Y la línea de honestidad, que hay que decirla: PyMC no hace exactamente esto, hace NUTS, que
-propone usando el gradiente y es mucho más listo. La idea de fondo es la misma.
-:::
-
-## El montón que deja el paseo es la posteriori
-
-```{python}
-#| label: graf-caminata-posteriori
-
 fig, (ax1, ax2) = plt.subplots(
     1, 2, figsize=(9, 4), sharey=True, gridspec_kw={"width_ratios": [2, 1]}
 )
 
-dibuja_recorrido(ax1)  # ahora los dos mil pasos, sin detalle: importa el montón
+dibuja_recorrido(ax1)  # los dos mil pasos, sin detalle: importa el montón, no el paso
 
 ax2.hist(
     cadena[subida:], bins=30, density=True, orientation="horizontal",
@@ -309,10 +281,27 @@ Muestrear solo necesita el numerador: $P(p \mid \text{datos}) \propto P(\text{da
 :::
 
 ::: {.notes}
-Ahora se ve la cadena entera, los dos mil pasos, y al lado el montón que deja. Aquí está el
-truco: como el paso se acepta según la plausibilidad relativa, la cadena acaba pasando en cada
-zona un tiempo proporcional a lo plausible que es esa zona. El recuento de visitas no se
-parece a la posteriori: es la posteriori. Y no se ha resuelto ninguna integral por el camino.
+La regla primero, en cuatro frases, sobre el recorrido de la izquierda: estás en un valor de
+$p$, propones otro cercano, miras cuántas veces más plausible es —priori por verosimilitud,
+nada más— y si es mejor, te mueves; si es peor, te mueves con esa probabilidad. Dos mil veces.
+
+Aquí están los dos mil pasos y no se distingue ninguno, así que el paso va de palabra: un
+tercio de las veces, más o menos, la propuesta es peor y se rechaza, y la cadena se queda
+donde estaba. La zona sombreada del principio es el arranque en 0,10, deliberadamente malo:
+la cadena no sabe nada cuando empieza y esos primeros pasos son subida, no muestreo. Eso es
+el `tune=2000` de la slide del modelo, que PyMC usa para colocarse y luego tira.
+
+Si alguien quiere ver el paso y el rechazo, están en la slide de backup `caminata`: los
+doscientos primeros pasos con marcador, y los tramos planos son los rechazos. Se saca ahí, en
+el turno de preguntas, y no se enseña aquí.
+
+Y la línea de honestidad, que hay que decirla: PyMC no hace exactamente esto, hace NUTS, que
+propone usando el gradiente y es mucho más listo. La idea de fondo es la misma.
+
+Y ahora el truco, que es el título: como el paso se acepta según la plausibilidad relativa,
+la cadena acaba pasando en cada zona un tiempo proporcional a lo plausible que es esa zona. El
+recuento de visitas no se parece a la posteriori: es la posteriori. Y no se ha resuelto
+ninguna integral por el camino.
 
 Si conviene, volver un segundo a la slide del histograma de PyMC: es el mismo dibujo.
 
@@ -1153,8 +1142,8 @@ Orden esperado de las preguntas, de más a menos probable:
 5. **"¿Cuánto tarda? ¿Necesito máquina?"** Tres segundos el esqueleto, minuto y pico el de
    medios, y las dos cifras salen de un portátil. Decirlo con esas palabras.
 6. **"¿Y una priori no informativa?"** Backup: `priori-plana`.
-7. **"¿Cómo funciona el muestreo por dentro?"** No hace falta backup: la caminata del
-   Metropolis sigue en el recorrido, se vuelve a ella.
+7. **"¿Cómo funciona el muestreo por dentro?"** Backup: `caminata`. Los pasos y los
+   rechazos, de cerca.
 8. **"¿Vale para mi TFM, para mi campo?"** Vale para cualquier sitio donde haya pocos
    datos y algo sabido de antes, que es la situación de un TFM entero. El bucle no cambia:
    lo que cambia es en qué unidades se escribe la priori. Enlazar con `el-lunes`.
@@ -1169,6 +1158,7 @@ Estas slides no están en el recorrido: se salta a ellas. Con la presentación e
 `G` abre el salto directo de revealjs; se escribe el identificador y Enter.
 
 - `priori-plana` — "¿y una priori no informativa?"
+- `caminata` — "¿cómo funciona el muestreo por dentro?"
 - `saturacion` — "¿y la saturación?"
 - `el-lunes` — "¿por dónde empiezo?"
 
@@ -1213,6 +1203,31 @@ Si preguntan por Jeffreys: para la binomial es `Beta(1/2, 1/2)`, y su gracia es 
 invariante a la reparametrización, que es justo lo que la uniforme no es. Con 100 tiradas
 da lo mismo que la uniforme hasta la tercera cifra. El argumento no es cuál es la buena:
 es que las tres son elecciones y solo una de ellas se presenta como si no lo fuera.
+:::
+
+## Esa distribución no se ha calculado: se ha recorrido {#caminata}
+
+```{python}
+#| label: graf-caminata
+
+fig, ax = plt.subplots(figsize=(9, 4))
+dibuja_recorrido(ax, hasta=zoom, detalle=True)
+ax.legend(loc="lower right")
+plt.show()
+```
+
+::: {.notes}
+Los doscientos primeros pasos de los dos mil, de cerca, que es la única forma de que se
+distinga alguno. Señalar los tramos planos: son los rechazos, los pasos en los que la cadena
+propone un valor peor y se queda donde estaba. Un tercio de las veces, más o menos.
+
+La zona sombreada es la subida inicial desde el arranque en 0,10, que es deliberadamente
+malo: la cadena no sabe nada cuando empieza. Eso es el `tune=2000` del modelo, que PyMC usa
+para colocarse y luego tira.
+
+Esto es un Metropolis escrito a mano. PyMC hace NUTS, que propone usando el gradiente y deja
+un recorrido que parece ruido blanco: ahí no se ve ni un paso corto ni un rechazo, y por eso
+esta slide no es la traza de PyMC. La idea de fondo es la misma.
 :::
 
 ## Con Hill el modelo explica menos {#saturacion}
