@@ -173,16 +173,6 @@ $$
 | $P(p)$ | priori: lo que creías antes |
 | $P(\text{datos})$ | constante normalizadora |
 
-## Necesitas tres cosas: datos, priori y modelo
-
-::: {.incremental}
-
-- **Datos**: 60 caras en 100 lanzamientos.
-- **Priori**: qué valores te parecen razonables para $p$ antes de mirar.
-- **Verosimilitud**: cómo se generan los datos dado $p$. Aquí, una binomial.
-
-:::
-
 ## En PyMC queda así: priori, datos y verosimilitud
 
 ```{python}
@@ -198,6 +188,8 @@ with pm.Model() as modelo_moneda:
         draws=2000, tune=2000, chains=4, random_seed=SEMILLA, progressbar=False
     )
 ```
+
+- Tres líneas: lo que creías antes de mirar, las 60 caras de 100, y la binomial que las genera.
 
 ## El resultado es una distribución
 
@@ -434,25 +426,6 @@ charla: la priori se mueve donde hay señal (el ROI) y se queda igual donde no l
 (`alpha`), y la predictiva posterior se contrasta contra los datos que sí tenemos.
 :::
 
-## Los ingresos suben y bajan; la inversión, canal a canal, también
-
-```{python}
-#| label: graf-series-mmm
-
-fig, ejes = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
-
-ejes[0].plot(df["time"], df["revenue"] / 1e6, color=ACENTO)
-ejes[0].set_ylabel("Ingresos (M€)")
-
-for canal, color in zip(CANALES, GRISES + [ACENTO]):
-    ejes[1].plot(df["time"], df[f"{canal}_spend"] / 1e3, color=color, label=canal, lw=1)
-ejes[1].set_ylabel("Inversión (k€)")
-ejes[1].legend(ncol=5, fontsize=9)
-
-fig.tight_layout()
-plt.show()
-```
-
 ## La regresión que ajusta todo el mundo: ingresos contra inversión, canal a canal
 
 ```{python}
@@ -477,25 +450,21 @@ Mínimos cuadrados. El coeficiente de cada canal se lee directamente como ROI: e
 
 ## Ningún canal es significativo y el $R^2$ es `{python} f"{ols.rsquared:.2f}"`
 
+```{python}
+#| label: correlaciones-canales
+#| include: false
+
+correlaciones = df[[f"{c}_spend" for c in CANALES]].corr()
+correlaciones.index = correlaciones.columns = CANALES
+```
+
 - El p-valor más bajo, el de `Channel3`, es `{python} f"{ols.pvalues['Channel3_spend']:.2f}"`.
 - Los intervalos van de perder dinero a ganar el triple: `Channel2` llega a `{python} f"{ols.conf_int().loc['Channel2_spend', 1]:.1f}"` veces lo invertido.
+- Y los canales se mueven juntos: `Channel2`, `Channel3` y `Channel4` correlacionan entre sí por encima de `{python} f"{min(correlaciones.loc['Channel2', 'Channel3'], correlaciones.loc['Channel2', 'Channel4'], correlaciones.loc['Channel3', 'Channel4']):.2f}"`, y son `{python} len(df)` filas para separarlos, más el retraso con el que vende cada anuncio.
 
 ::: aside
 Esto es lo que se lleva el equipo de marketing a la reunión.
 :::
-
-## Los canales se mueven juntos, y un anuncio no se agota la semana en que se emite
-
-```{python}
-#| label: tabla-correlacion
-
-correlaciones = df[[f"{c}_spend" for c in CANALES]].corr()
-correlaciones.index = correlaciones.columns = CANALES
-correlaciones.round(2)
-```
-
-- `Channel2`, `Channel3` y `Channel4` correlacionan entre sí por encima de `{python} f"{min(correlaciones.loc['Channel2', 'Channel3'], correlaciones.loc['Channel2', 'Channel4'], correlaciones.loc['Channel3', 'Channel4']):.2f}"`.
-- Y son `{python} len(df)` filas para separar eso, más el retraso con el que vende cada anuncio.
 
 ## No es que falte un modelo más grande
 
@@ -504,7 +473,7 @@ correlaciones.round(2)
 
 # El esqueleto: nivel y controles del KPI
 
-## Quito los medios y quedan tres parámetros que decidir
+## Quito los medios y quedan tres parámetros: el nivel, los controles y el ruido
 
 ```{python}
 #| label: modelo-esqueleto
@@ -527,17 +496,14 @@ with pm.Model(coords={"control": CONTROLES, "semana": semanas}) as esqueleto:
     pm.Normal("y", mu=media, sigma=sigma, observed=y_esc, dims="semana")
 ```
 
-## `mu` es el nivel del KPI; `gamma`, cuánto lo mueve cada control
-
-- El KPI está estandarizado: media cero, desviación típica uno. `mu` es justo eso, su nivel.
-- Los controles también lo están: `gamma_c` es cuánto sube el KPI cuando ese control sube una desviación típica.
+- Todo va estandarizado: `mu` es el nivel del KPI y `gamma_c`, cuánto lo mueve ese control cuando sube una desviación típica.
 - `sigma` es lo que el modelo no explica, en esas mismas unidades.
 
 ::: aside
 Todas las prioris de este bloque están escritas en esta escala. Si cambia el escalado, cambia el modelo.
 :::
 
-## Y esto no se afirma: se simula antes de mirar los datos
+## Esto no se afirma: se simula. Y con las prioris de Meridian salen semanas en negativo
 
 ```{python}
 #| label: prev-esqueleto
@@ -566,41 +532,33 @@ def ingresos_previos(modelo, draws=500):
 ```
 
 ```{python}
-#| label: graf-previa-esqueleto
+#| label: graf-previas-esqueleto
 
 y_previo = ingresos_previos(esqueleto)
-
-fig, eje = plt.subplots(figsize=(9, 4))
-eje.hist(y_previo.ravel() / 1e6, bins=80, color="#AAAAAA", density=True,
-         label="simulado desde la priori")
-eje.hist(y / 1e6, bins=30, color=ACENTO, density=True, alpha=0.8, label="observado")
-eje.set_xlabel("Ingresos semanales (M€)")
-eje.set_ylabel("Densidad")
-eje.legend()
-plt.show()
-```
-
-## Con las prioris que trae Meridian, hay semanas de ingresos negativos
-
-```{python}
-#| label: graf-previa-meridian
 
 meridian = construir_esqueleto(mu_sd=5.0, gamma_sd=5.0, sigma_prior="halfnormal")
 y_meridian = ingresos_previos(meridian)
 pct_negativas_meridian = 100 * (y_meridian < 0).mean()
 
-fig, eje = plt.subplots(figsize=(9, 4))
-eje.hist(y_meridian.ravel() / 1e6, bins=80, color="#AAAAAA", density=True,
-         label="simulado con las prioris de Meridian")
-eje.hist(y / 1e6, bins=30, color=ACENTO, density=True, alpha=0.8, label="observado")
-eje.axvline(0, color="black", linestyle="--", linewidth=1.2)
-eje.set_xlabel("Ingresos semanales (M€)")
-eje.set_ylabel("Densidad")
-eje.legend()
+fig, ejes = plt.subplots(1, 2, figsize=(11, 4))
+
+titulos = ["Normal(0, 1) y Exponential(1)", "Las prioris de Meridian"]
+for eje, simulado, titulo in zip(ejes, [y_previo, y_meridian], titulos):
+    eje.hist(simulado.ravel() / 1e6, bins=80, color="#AAAAAA", density=True,
+             label="simulado desde la priori")
+    eje.hist(y / 1e6, bins=30, color=ACENTO, density=True, alpha=0.8, label="observado")
+    eje.axvline(0, color="black", linestyle="--", linewidth=1.2)
+    eje.set_title(titulo)
+    eje.set_xlabel("Ingresos semanales (M€)")
+
+ejes[0].set_ylabel("Densidad")
+ejes[0].legend()
+
+fig.tight_layout()
 plt.show()
 ```
 
-El `{python} f"{pct_negativas_meridian:.1f}"` % de las semanas simuladas factura menos que nada.
+A la derecha, el `{python} f"{pct_negativas_meridian:.1f}"` % de las semanas simuladas factura menos que nada.
 
 ::: aside
 Meridian usa `mu, gamma ~ Normal(0, 5)` y `sigma ~ HalfNormal(5)`. Aquí, `Normal(0, 1)` y `Exponential(1)`.
@@ -613,7 +571,7 @@ sola serie: no las tapan, y una empresa vendiendo menos que nada varias semanas 
 que el modelo se cree antes de mirar un solo dato.
 :::
 
-## Se ajusta en tres segundos
+## Se ajusta en tres segundos, y antes de leer la posteriori miro si ha funcionado
 
 ```{python}
 #| label: ajuste-esqueleto
@@ -627,38 +585,32 @@ with esqueleto:
 ```
 
 ```{python}
-#| label: ppc-esqueleto-datos
+#| label: diagnostico-esqueleto
 #| include: false
-
-with esqueleto:
-    idata_esqueleto.extend(pm.sample_posterior_predictive(idata_esqueleto, random_seed=SEMILLA))
 
 resumen_esqueleto = az.summary(idata_esqueleto, var_names=["mu", "gamma", "sigma"])
 divergencias_esqueleto = int(idata_esqueleto.sample_stats["diverging"].sum())
 ```
 
-## Antes de leer la posteriori, miro si el muestreador ha funcionado
-
 ```{python}
 #| label: graf-traza-esqueleto
 
-az.plot_trace(idata_esqueleto, var_names=["mu", "gamma", "sigma"], compact=True)
+az.plot_trace(idata_esqueleto, var_names=["mu", "gamma", "sigma"], compact=True,
+              figsize=(11, 3.6))
 plt.tight_layout()
 plt.show()
 ```
 
-- `r_hat` máximo: `{python} f"{resumen_esqueleto['r_hat'].max():.2f}"`.
-- `ess_bulk` mínimo: `{python} int(resumen_esqueleto['ess_bulk'].min())`.
-- Divergencias: `{python} divergencias_esqueleto`.
+- `r_hat` máximo `{python} f"{resumen_esqueleto['r_hat'].max():.2f}"`, `ess_bulk` mínimo `{python} int(resumen_esqueleto['ess_bulk'].min())`, divergencias `{python} divergencias_esqueleto`.
 
-## El modelo reproduce los datos que ha visto
+::: {.notes}
+Tres segundos en un portátil, y esto es la mitad de la respuesta a "¿necesito una máquina
+para esto?": la otra mitad llega con el modelo de medios.
 
-```{python}
-#| label: graf-ppc-esqueleto
-
-az.plot_ppc(idata_esqueleto, num_pp_samples=100, colors=[ACENTO, "#7A7A7A", "black"])
-plt.show()
-```
+La otra comprobación, la predictiva posterior, aquí solo se nombra: el modelo reproduce los
+datos que ha visto. Se ve entera en el bloque de medios, donde además dice algo que aquí no
+diría.
+:::
 
 ## Lo que este modelo no sabe hacer
 
@@ -914,7 +866,7 @@ facturados vengan de los anuncios. Si eso fuera verdad, no harían falta modelos
 jefe delante, apretar la sigma de la lognormal, no su centro: el problema es la cola.
 :::
 
-## Catorce parámetros en vez de tres, y ya no son tres segundos
+## Catorce parámetros en vez de tres: ya no son tres segundos, y hay que volver a mirar
 
 ```{python}
 #| label: ajuste-medios
@@ -940,20 +892,23 @@ mu_medios_post = float(idata_medios.posterior["mu"].mean())
 sigma_medios = float(idata_medios.posterior["sigma"].mean())
 ```
 
-## Otra vez: ¿ha funcionado el muestreador?
-
 ```{python}
 #| label: graf-traza-medios
 
-az.plot_trace(idata_medios, var_names=["roi", "mu", "sigma"], compact=True)
+az.plot_trace(idata_medios, var_names=["roi", "mu", "sigma"], compact=True,
+              figsize=(11, 3.6))
 plt.tight_layout()
 plt.show()
 ```
 
-- `r_hat` máximo: `{python} f"{resumen_medios['r_hat'].max():.2f}"`. `ess_bulk` mínimo: `{python} int(resumen_medios['ess_bulk'].min())`. Divergencias: `{python} divergencias_medios`.
+- `r_hat` máximo `{python} f"{resumen_medios['r_hat'].max():.2f}"`, `ess_bulk` mínimo `{python} int(resumen_medios['ess_bulk'].min())`, divergencias `{python} divergencias_medios`.
 - `mu` se ha ido a `{python} f"{mu_medios_post:.1f}".replace(".", ",").replace("-", "−")`. Con la `Normal(0, 1)` del esqueleto no habría llegado.
 
 ::: {.notes}
+Aquí el ajuste ya no son tres segundos, es minuto y pico: catorce parámetros y un adstock
+por medio. Las dos cifras salen de un portátil, y con eso está contestada la pregunta de
+si hace falta máquina.
+
 El `target_accept` es 0,95 y no el 0,9 del esqueleto: con 0,9 este modelo deja tres
 divergencias. Está medido, no supuesto.
 
@@ -1162,7 +1117,9 @@ Orden esperado de las preguntas, de más a menos probable:
 6. **"¿Y una priori no informativa?"** Backup: `priori-plana`.
 7. **"¿Cómo funciona el muestreo por dentro?"** No hace falta backup: la caminata del
    Metropolis sigue en el recorrido, se vuelve a ella.
-8. **"¿Vale para mi TFM, para mi campo?"** Vale para cualquier sitio donde haya pocos
+8. **"¿Qué pinta tienen los datos?"** Backup: `series`. Las 156 semanas dibujadas, ingresos
+   arriba e inversión abajo. Sale del recorrido de la charla: si nadie pregunta, no se enseña.
+9. **"¿Vale para mi TFM, para mi campo?"** Vale para cualquier sitio donde haya pocos
    datos y algo sabido de antes, que es la situación de un TFM entero. El bucle no cambia:
    lo que cambia es en qué unidades se escribe la priori. Enlazar con `el-lunes`.
 
@@ -1178,6 +1135,7 @@ Estas slides no están en el recorrido: se salta a ellas. Con la presentación e
 - `priori-plana` — "¿y una priori no informativa?"
 - `saturacion` — "¿y la saturación?"
 - `el-lunes` — "¿por dónde empiezo?"
+- `series` — "¿qué pinta tienen los datos?"
 
 Si no sale el identificador, vale cualquier palabra que esté en la slide ("lunes",
 "Hill"): el mismo salto busca por texto. El menú (☰, abajo a la izquierda) llega hasta
@@ -1248,6 +1206,31 @@ canales pasan de ROI mediano por debajo de 1 a por encima, y su probabilidad de 
 dinero cae unos veinte puntos. Eso se mueve **sin que los datos hayan dicho nada**, porque
 quien lo mueve es un parámetro que no está identificado. Por eso la frase final de la
 charla se construye sobre los dos canales cuyo ROI aguanta las dos versiones.
+:::
+
+## Los ingresos suben y bajan; la inversión, canal a canal, también {#series}
+
+```{python}
+#| label: graf-series-mmm
+
+fig, ejes = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+
+ejes[0].plot(df["time"], df["revenue"] / 1e6, color=ACENTO)
+ejes[0].set_ylabel("Ingresos (M€)")
+
+for canal, color in zip(CANALES, GRISES + [ACENTO]):
+    ejes[1].plot(df["time"], df[f"{canal}_spend"] / 1e3, color=color, label=canal, lw=1)
+ejes[1].set_ylabel("Inversión (k€)")
+ejes[1].legend(ncol=5, fontsize=9)
+
+fig.tight_layout()
+plt.show()
+```
+
+::: {.notes}
+La pinta de los datos, para quien pregunte por ellos: 156 semanas, ingresos arriba e
+inversión canal a canal abajo. Se ve que los canales suben y bajan a la vez, que es el
+bullet de la slide del OLS con dibujo en vez de con un número.
 :::
 
 ## El lunes por la mañana {#el-lunes}
