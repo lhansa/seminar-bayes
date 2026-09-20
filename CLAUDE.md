@@ -4,7 +4,7 @@ Instrucciones para agentes que trabajen en este repositorio.
 
 ## Qué es esto
 
-Seminario de **una hora** sobre inferencia bayesiana en la empresa: slides revealjs en `index.qmd`, sobre los datos de *marketing mix* de Google Meridian. Recorrido, **tres bloques**:
+Seminario de una hora —**40 minutos de charla y 20 de preguntas**— sobre inferencia bayesiana en la empresa: slides revealjs en `index.qmd`, sobre los datos de *marketing mix* de Google Meridian. Recorrido, **tres bloques**:
 
 1. **La moneda.** 60 caras en 100 tiradas, el p-valor por simulación y la vuelta al problema.
 2. **El esqueleto.** Meridian nacional sin medios: nivel y controles del KPI, tres prioris, simulación previa, muestreo y diagnóstico. Ajusta en tres segundos.
@@ -12,7 +12,7 @@ Seminario de **una hora** sobre inferencia bayesiana en la empresa: slides revea
 
 Por qué Meridian pone la priori en el ROI y no en `beta` **se implementa**, no se discute al final: es el bloque 3.
 
-El eje no es el *marketing mix*: son **elegir prioris y diagnosticar**, y por eso el bucle priori → simulación previa → ajuste → diagnóstico se recorre entero dos veces, en el esqueleto y en los medios. Es una hora: si hay que añadir algo, se quita otra cosa.
+El eje no es el *marketing mix*: son **elegir prioris y diagnosticar**, y por eso el bucle priori → simulación previa → ajuste → diagnóstico se recorre entero dos veces, en el esqueleto y en los medios. Son 40 minutos de charla: si hay que añadir algo, se quita otra cosa.
 
 Público: profesionales de datos. Saben Python y regresión; no saben bayesiana. Se puede dar por sabido OLS, p-valores e intervalos de confianza.
 
@@ -37,6 +37,8 @@ Nada de eso entra en `_quarto.yml`.
 La parte de la moneda sale de `cartas/01-inferencia-estadistica/carta.qmd` del repositorio **`estadistica-correspondencia`**, del mismo autor, vía `index_radon.qmd`. Esa carta es la fuente de verdad: mismos datos, mismas prioris, mismas conclusiones. No inventes resultados ni cambies los valores de las prioris sin motivo.
 
 Las diferencias con la carta son decisiones tomadas, no olvidos, y se mantienen: la anécdota de Obama con la que abre la carta se ha quitado (se empieza con la moneda), la moneda se resuelve solo por simulación (fuera la aproximación normal y el binomial exacto) y la posteriori exacta (una Beta) también se queda fuera: el aside da la forma proporcional de Bayes, que es lo que explica por qué se puede muestrear sin la constante normalizadora.
+
+El contraste de hipótesis **se nombra de palabra y no tiene slide** (#75): el `H_0` frente a `H_1` escrito en LaTeX es justo lo que este público ya sabe de memoria. Pero la frase hace falta, y su sitio es el *aside* de la slide del p-valor simulado: sin ella, el giro de «He dado la vuelta al problema» no tiene contra qué girar.
 
 **Las dos slides del muestreo llevan un Metropolis a mano, en numpy, y es a propósito** (issue #29). NUTS da muestras casi independientes: su recorrido parece ruido blanco y no se ve ni un paso corto ni un rechazo, que es justo lo que ahí se cuenta de palabra. Por lo mismo, la primera enseña solo los `zoom = 200` primeros pasos de los dos mil —con los dos mil no se distingue ninguno— y la segunda sí los enseña todos, porque ahí lo que importa ya no es el paso sino el montón. Una nota del ponente avisa de que PyMC usa NUTS y no esto.
 
@@ -70,10 +72,14 @@ Esto es lo que más importa al editar `index.qmd`:
 
 ## El turno de preguntas y la sección de backup
 
-El slot real son **60 minutos: 40 de charla y 20 de preguntas** (#73). El recorte de la charla a 40 va por #72 y no está hecho; lo que sí está hecho es que los 20 minutos de preguntas tengan material, porque son un tercio del slot.
+El slot real son **60 minutos: 40 de charla y 20 de preguntas** (#73), y los 20 no son colchón: son un tercio del slot y tienen material propio.
+
+El recorte de #72 **está hecho**. El recorrido son 43 slides de contenido y **unos 45 minutos estimados a ojo de slide**, no cronometrados: la moneda ~18, el caso ~4, el esqueleto ~5, los medios ~14 y el cierre ~3. El objetivo eran 40; 45 vale, y lo que no valía eran los 59 de los que se venía. **El número bueno sale del ensayo con cronómetro, no de esa tabla**: no afines al minuto ni presupuestes colchón por interrupciones, que la sala no interrumpe la parte expositiva —para eso están los veinte minutos de después—.
+
+Si el ensayo se pasa, en este orden: `Quién soy` de un minuto a treinta segundos, y después la tabla del OLS a *backup* dejando solo su lectura. Y el bloque de la moneda queda en 19 slides, no en las 18 que presupuestaba #72, porque #67 se decidió no hacer.
 
 - **`# Backup` va al final, detrás de `# leonardohansa.com`.** Como toda sección con slides debajo, revealjs la monta en pila vertical: no aparece en el recorrido salvo que se siga pulsando la flecha después del final.
-- **Se salta a una slide concreta con `G`, su id y Enter.** Por eso cada una lleva id fijo: `{#priori-plana}`, `{#saturacion}`, `{#el-lunes}`. Está probado sobre el deck renderizado, no supuesto. Con `slide-number: false` el salto por número no sirve, así que **si añades una slide de backup, ponle id**. El mismo cuadro busca también por texto, y el menú (☰) solo llega hasta «Backup», no hasta cada slide de la pila.
+- **Se salta a una slide concreta con `G`, su id y Enter.** Por eso cada una lleva id fijo: `{#priori-plana}`, `{#saturacion}`, `{#series}`, `{#el-lunes}`. Está probado sobre el deck renderizado, no supuesto. Con `slide-number: false` el salto por número no sirve, así que **si añades una slide de backup, ponle id**. El mismo cuadro busca también por texto, y el menú (☰) solo llega hasta «Backup», no hasta cada slide de la pila.
 - **El criterio de qué vive ahí**: la pregunta previsible que se responde mejor con un gráfico que de palabra. Hoy son cuatro: la priori plana en logit (#68, que salió del bloque de la moneda), la comparación con y sin Hill, «El lunes por la mañana» —que es la respuesta a «¿por dónde empiezo?» y es de tres frases accionables, no de bibliografía— y las series temporales del caso (`series`), que salieron del recorrido en #70 y se enseñan solo si alguien pregunta por la pinta de los datos.
 - **El zoom del Metropolis (`graf-caminata`) se queda en el recorrido.** #67 propone mandarlo a *backup*; la decisión tomada es que no, y la nota del turno de preguntas cuenta con que la slide sigue en la charla.
 - **El guion de las preguntas está en la nota del ponente de `# leonardohansa.com`**: las nueve previstas, en orden de probabilidad, cada una con dónde cae —nota, slide de la charla o *backup*—. Si mueves o añades una slide de *backup*, esa nota se actualiza con ella.

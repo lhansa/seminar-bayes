@@ -4,13 +4,13 @@
 
 Notebook archivado: [![Abrir el taller archivado en Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/lhansa/seminar-bayes/blob/main/notebooks/taller.ipynb)
 
-Material del seminario **"Inferencia bayesiana en la empresa"**, una hora sobre los datos de *marketing mix* simulados por [Google Meridian](https://github.com/google/meridian).
+Material del seminario **"Inferencia bayesiana en la empresa"**, una hora —40 minutos de charla y 20 de preguntas— sobre los datos de *marketing mix* simulados por [Google Meridian](https://github.com/google/meridian).
 
 Las slides se publican en GitHub Pages. El recorrido son tres bloques: la moneda (60 caras en 100 tiradas, frecuentista vs. bayesiano, resuelta por simulación), el esqueleto del KPI (nivel y controles) y el modelo de medios (adstock geométrico, con la priori puesta sobre el ROI en lugar de sobre los coeficientes). El foco son **las dos cosas que se practican mal**: elegir prioris y defenderlas simulando desde ellas antes de ver los datos, y diagnosticar lo que sale.
 
 `index.qmd`, las slides nuevas, renderiza ya el seminario entero: los tres bloques —la moneda, el esqueleto del KPI y el modelo de medios— y el cierre.
 
-Detrás del cierre hay una sección **`# Backup`**, fuera del recorrido, para los veinte minutos de preguntas: la priori plana en `logit(p)`, la comparación con y sin saturación de Hill y la respuesta a «¿por dónde empiezo?». Se salta a cualquiera de ellas con `G`, el identificador de la slide (`priori-plana`, `saturacion`, `el-lunes`) y Enter. El guion de las preguntas previstas está en la nota del ponente de la última slide.
+Detrás del cierre hay una sección **`# Backup`**, fuera del recorrido, para los veinte minutos de preguntas: la priori plana en `logit(p)`, la comparación con y sin saturación de Hill, la respuesta a «¿por dónde empiezo?» y las series temporales del caso. Se salta a cualquiera de ellas con `G`, el identificador de la slide (`priori-plana`, `saturacion`, `el-lunes`, `series`) y Enter. El guion de las preguntas previstas está en la nota del ponente de la última slide.
 
 Aparte de las slides está `notebooks/radon.ipynb`: el recorrido del radón de Minnesota (agrupado → *unpooled* → jerárquico), narrativo y sin ejercicios. No es material de la charla: es el regalo de suscripción, y sobre él se graba el vídeo de los modelos jerárquicos.
 
