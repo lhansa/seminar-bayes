@@ -188,7 +188,7 @@ Parte de tu trabajo será elegir qué librería te gusta más.
 
 ## PyMC
 
-![](img/PyMC_banner.svg)
+![https://www.pymc.io/welcome.html](img/PyMC_banner.svg)
 
 
 ## En PyMC queda así: priori, verosimilitud y datos
@@ -398,11 +398,12 @@ tan concreto.
 - El bayesiano calcula la probabilidad del **parámetro**.
 - El segundo responde a la pregunta que yo hice.
 - El precio: elegir la priori, y mucho más cómputo.
-- Ahora, el mismo bucle sobre un caso real: cuánto vende cada euro de publicidad.
 
 :::
 
-# El caso: cuánto vende cada euro de publicidad
+## Esto ha sido la teoría. Vamos a la práctica
+
+# Cuál es el retorno de invertir un euro en publicidad
 
 ```{python}
 #| label: datos-mmm
@@ -422,13 +423,9 @@ CONTROLES = ["competitor_sales_control", "sentiment_score_control"]
 
 ## `{python} len(df)` semanas de un anunciante nacional, simuladas por Google Meridian
 
-- Cinco canales de pago, con impresiones e inversión.
-- Dos controles: ventas de la competencia y sentimiento de marca.
-- El KPI son los ingresos.
-
-::: aside
-Datos simulados por Google Meridian, leídos por URL fijando la versión `v1.1.5`.
-:::
+- Cinco medios publicatarios de pago, con impresiones e inversión.
+- Otra variables: ventas de la competencia y sentimiento de marca.
+- Variable objetivo: ingresos (`revenue`).
 
 ::: {.notes}
 Si preguntan si recuperamos el ROI verdadero: Google no publica los valores generadores de
