@@ -113,7 +113,7 @@ plt.show()
 ```
 
 ::: aside
-Ese número es el p-valor: lo mismo que da el contraste de siempre, pero sin fórmulas.
+Ese número es el aproximadamente el p-valor del contraste.
 :::
 
 ::: {.notes}
@@ -135,10 +135,6 @@ Si alguien pregunta: sí, hay fórmulas para calcularlo sin simular, y no nos im
 - La pregunta era sobre **la moneda**, la distribución de $p$.
 - La respuesta es sobre **los datos**, su distribución dado $p = 0{,}5$.
 
-::: aside
-Y ni siquiera sobre los datos que tengo: sobre los que podrían haber salido.
-:::
-
 ::: {.notes}
 Este es el giro del bloque. En la slide anterior, callarse: la pregunta es retórica, pero
 el silencio la hace funcionar. Los tres puntos van de uno en uno y el que importa es el
@@ -156,19 +152,22 @@ sirve" y ahí se va el resto del bloque.
 
 ## La sesión de hoy va sobre:
 
-- Un caso real: el *marketing mix* de Google Meridian.
-- Elegir prioris, que es la parte de la que nadie habla.
-- Diagnosticar lo que sale del muestreo, no solo mirarlo.
+- Qué resultados da la estadística bayesiana.
+- Por qué (me parece que) son más intuitivos.
+- Cómo se pone en práctica la estadística bayesiana.
 
 ::: aside
-No tenemos mucho tiempo, así que dejaré muchas cosas fuera
+Esto es una charla, no un curso cuatrimestral, así que dejaré **muchas** cosas fuera.
 :::
 
-# El lanzamiento de moneda desde un punto de vista bayesiano
+# El lanzamiento de moneda, en bayesiano
 
 ## Nota inicial: no digo que no hagas estadística frecuentista
 
-## Todo el enfoque bayesiano se apoya en una sola regla
+- Resultados similares. 
+- Interpretación diferente.
+
+## El fundamento bayesiano
 
 $$
 P(p \mid \text{datos}) = \frac{P(\text{datos} \mid p) \cdot P(p)}{P(\text{datos})}
@@ -180,26 +179,33 @@ $$
 |---|---|
 | $P(p \mid \text{datos})$ | posteriori: lo que buscas |
 | $P(\text{datos} \mid p)$ | verosimilitud: tu modelo |
-| $P(p)$ | priori: lo que creías antes |
+| $P(p)$ | priori: lo que creías **antes** |
 | $P(\text{datos})$ | constante normalizadora |
 
-## En PyMC queda así: priori, datos y verosimilitud
+## Los métodos bayesianos requieren mucho cómputo
+
+Parte de tu trabajo será elegir qué librería te gusta más. 
+
+## PyMC
+
+![](img/PyMC_banner.svg)
+
+
+## En PyMC queda así: priori, verosimilitud y datos
 
 ```{python}
 #| label: modelo-moneda
 #| echo: true
-#| code-line-numbers: "|4|5"
 
 with pm.Model() as modelo_moneda:
-    p_cara = pm.Uniform("p_cara", lower=0, upper=1)
-    y = pm.Binomial("y", n=100, p=p_cara, observed=60)
+    p_cara = pm.Uniform("p_cara", lower=0, upper=1)    # priori
+    y = pm.Binomial("y", n=100, p=p_cara, observed=60) # verosimilitud y datos
 
     idata_moneda = pm.sample(
         draws=2000, tune=2000, chains=4, random_seed=SEMILLA, progressbar=False
     )
 ```
 
-- Tres líneas: lo que creías antes de mirar, las 60 caras de 100, y la binomial que las genera.
 
 ## El resultado es una distribución
 
@@ -309,10 +315,6 @@ plt.tight_layout()
 plt.show()
 ```
 
-::: aside
-Muestrear solo necesita el numerador: $P(p \mid \text{datos}) \propto P(\text{datos} \mid p) \cdot P(p)$. Al comparar dos valores de $p$, $P(\text{datos})$ se cancela. Esa integral no la hemos calculado nunca.
-:::
-
 ::: {.notes}
 Es la misma cadena de antes, ahora entera: los dos mil pasos, con los doscientos de la slide
 anterior metidos en el primer décimo. La banda gris del principio es la misma subida inicial,
@@ -349,7 +351,7 @@ float(np.mean(p_cara_post > 0.5))
 Ese número es la probabilidad de que la probabilidad de obtener cara sea estrictamente mayor que 0,5 dada esta priori y esta verosimilitud.
 :::
 
-## Me costó años entender qué era un intervalo de confianza. Ya no me hace falta
+## Me costó años entender qué era un intervalo de confianza
 
 ```{python}
 #| label: graf-hdi-moneda
