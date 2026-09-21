@@ -482,12 +482,11 @@ Esto es lo que te van a poner delante en una reunión de marketing.
 
 # El esqueleto: nivel y controles del KPI
 
-## Quito los medios y quedan tres parámetros: el nivel, los controles y el ruido
+## Empiezo con una regresión sin medios para entender la sintaxis
 
 ```{python}
-#| label: modelo-esqueleto
-#| echo: true
-
+#| label: procesado-esqueleto
+#| echo: false
 y = df["revenue"].to_numpy()
 z = df[CONTROLES].to_numpy(float)
 semanas = df["time"].dt.date.astype(str)
@@ -496,6 +495,11 @@ y_media, y_sd = y.mean(), y.std()
 y_esc = (y - y_media) / y_sd
 z_esc = (z - z.mean(axis=0)) / z.std(axis=0)
 
+```
+
+```{python}
+#| label: modelo-esqueleto
+#| echo: true
 with pm.Model(coords={"control": CONTROLES, "semana": semanas}) as esqueleto:
     mu = pm.Normal("mu", 0.0, 1.0)
     gamma = pm.Normal("gamma", 0.0, 1.0, dims="control")
@@ -505,14 +509,11 @@ with pm.Model(coords={"control": CONTROLES, "semana": semanas}) as esqueleto:
     pm.Normal("y", mu=media, sigma=sigma, observed=y_esc, dims="semana")
 ```
 
-- Todo va estandarizado: `mu` es el nivel del KPI y `gamma_c`, cuánto lo mueve ese control cuando sube una desviación típica.
-- `sigma` es lo que el modelo no explica, en esas mismas unidades.
+- `mu`: es el nivel del KPI escalado.
+- `gamma`: cuánto lo mueve ese control cuando sube una desviación típica.
+- `sigma`: lo que queda sin explicar.
 
-::: aside
-Todas las prioris de este bloque están escritas en esta escala. Si cambia el escalado, cambia el modelo.
-:::
-
-## Esto no se afirma: se simula. Y con las prioris de Meridian salen semanas en negativo
+## Ahora compruebo si las prioris tienen sentido, antes de usar datos
 
 ```{python}
 #| label: prev-esqueleto
@@ -551,7 +552,7 @@ pct_negativas_meridian = 100 * (y_meridian < 0).mean()
 
 fig, ejes = plt.subplots(1, 2, figsize=(11, 4))
 
-titulos = ["Normal(0, 1) y Exponential(1)", "Las prioris de Meridian"]
+titulos = ["Normal(0, 1) y Exponential(1)", "Normal(0, 5) y HalfNormal(5)"]
 for eje, simulado, titulo in zip(ejes, [y_previo, y_meridian], titulos):
     eje.hist(simulado.ravel() / 1e6, bins=80, color="#AAAAAA", density=True,
              label="simulado desde la priori")
@@ -569,10 +570,6 @@ plt.show()
 
 A la derecha, el `{python} f"{pct_negativas_meridian:.1f}"` % de las semanas simuladas factura menos que nada.
 
-::: aside
-Meridian usa `mu, gamma ~ Normal(0, 5)` y `sigma ~ HalfNormal(5)`. Aquí, `Normal(0, 1)` y `Exponential(1)`.
-:::
-
 ::: {.notes}
 Las prioris de Meridian no son un error: su modelo es jerárquico por regiones, con miles de
 observaciones repartidas por geografías, y ahí los datos las tapan. Aquí hay 156 semanas y una
@@ -585,7 +582,7 @@ Con profesores en la sala, nombrarlo cuesta una palabra y luego vale por medio a
 cuando llegue la pregunta de si esto no es subjetivo.
 :::
 
-## Se ajusta en tres segundos, y antes de leer la posteriori miro si ha funcionado
+## Ajusto y diagnostico
 
 ```{python}
 #| label: ajuste-esqueleto
@@ -615,7 +612,13 @@ plt.tight_layout()
 plt.show()
 ```
 
-- `r_hat` máximo `{python} f"{resumen_esqueleto['r_hat'].max():.2f}"`, `ess_bulk` mínimo `{python} int(resumen_esqueleto['ess_bulk'].min())`, divergencias `{python} divergencias_esqueleto`.
+::: aside
+
+- `r_hat` máximo `{python} f"{resumen_esqueleto['r_hat'].max():.2f}"`, 
+- `ess_bulk` mínimo `{python} int(resumen_esqueleto['ess_bulk'].min())`, 
+- divergencias `{python} divergencias_esqueleto`.
+
+:::
 
 ::: {.notes}
 Tres segundos en un portátil, y esto es la mitad de la respuesta a "¿necesito una máquina
@@ -626,7 +629,7 @@ datos que ha visto. Se ve entera en el bloque de medios, donde además dice algo
 diría.
 :::
 
-## Lo que este modelo no sabe hacer
+## Hasta aquí la sintaxis de una regresión múltiple
 
 ```{python}
 #| label: varianza-esqueleto
@@ -636,15 +639,9 @@ sigma_esqueleto = float(idata_esqueleto.posterior["sigma"].mean())
 varianza_explicada_esqueleto = 1 - sigma_esqueleto ** 2
 ```
 
-- Explica el `{python} f"{100 * varianza_explicada_esqueleto:.0f}"` % de la varianza del KPI. El resto sigue sin explicación.
-- No tiene ni un canal de publicidad dentro.
-- Así que no responde la pregunta por la que estamos aquí: cuánto vende cada euro invertido.
+Ahora metemos los medios (que es para lo que nos pagan).
 
-::: aside
-El siguiente bloque le mete los medios.
-:::
-
-# El modelo de medios: la priori sobre el ROI
+# El modelo de medios: ¿qué prioris necesitamos?
 
 ```{python}
 #| label: datos-medios
@@ -692,11 +689,7 @@ eje.legend(fontsize=11)
 plt.show()
 ```
 
-`alpha ~ Uniform(0, 1)`: ni idea de cuánto dura, y no pasa nada por decirlo.
-
-::: aside
-Los pesos suman uno a propósito: $\alpha$ reparte el efecto en el tiempo, no lo infla. Meridian usa ocho semanas de memoria.
-:::
+Priori: `alpha ~ Uniform(0, 1)`: ni idea de cuánto dura.
 
 ::: {.notes}
 El adstock arregla uno de los dos supuestos falsos de la regresión del principio: que el
@@ -727,8 +720,15 @@ natural de quien ha leído el código.
 
 ## Y ahora `beta`. ¿Alguien tiene una intuición sobre `beta`?
 
-El coeficiente de una inversión rezagada, dividida por la mediana de sus semanas con
-inversión, sobre un KPI estandarizado.
+- Variable independiente transformada. 
+- KPI estandarizado.
+- Modelamos conversiones, no facturación.
+
+::: aside
+
+El de marketing no sabrá guiarte.
+
+::: 
 
 ::: {.notes}
 Esta slide es una pregunta a la sala y un silencio. No rellenarlo. Nadie tiene esa
@@ -736,7 +736,7 @@ intuición: yo tampoco, y llevo años con esto. Si alguien levanta la mano, preg
 valor le parece razonable y dejar que se oiga en voz alta lo raro que suena.
 :::
 
-## Sobre lo que sí se tiene intuición es sobre el ROI
+## Sobre lo que sí tiene intuición es sobre el ROI
 
 ```{python}
 #| label: graf-priori-roi
@@ -755,11 +755,14 @@ eje.fill_between(rejilla_roi, densidad_roi, color=ACENTO, alpha=0.2,
 eje.axvline(1.0, color="black", linestyle="--", linewidth=1.2, label="ROI = 1: ni gana ni pierde")
 eje.set_xlabel("ROI: euros de ingreso incremental por euro invertido")
 eje.set_ylabel("Densidad")
+eje.set_title("roi ~ LogNormal(0,2; 0,9)")
 eje.legend()
 plt.show()
 ```
 
-`roi ~ LogNormal(0,2; 0,9)`: mediana `{python} f"{priori_roi.median():.2f}".replace(".", ",")`, el 90 % central entre `{python} f"{roi_bajo:.2f}".replace(".", ",")` y `{python} f"{roi_alto:.2f}".replace(".", ",")`, y un `{python} f"{100 * priori_roi.cdf(1):.0f}"` % de probabilidad de estar perdiendo dinero.
+- mediana `{python} f"{priori_roi.median():.2f}".replace(".", ",")`,
+- el 90 % central entre `{python} f"{roi_bajo:.2f}".replace(".", ",")` y `{python} f"{roi_alto:.2f}".replace(".", ",")`, 
+- un `{python} f"{100 * priori_roi.cdf(1):.0f}"` % de probabilidad de estar perdiendo dinero.
 
 ::: {.notes}
 Traducida a la reunión: "asumo que la publicidad devuelve algo más de lo que cuesta, pero
@@ -783,6 +786,10 @@ vale su ROI por lo invertido:
 
 $$
 \beta_m \cdot sd(y) \cdot \sum_t \tilde{x}_{tm} = \text{roi}_m \cdot \text{gasto}_m
+\quad\Longrightarrow\quad
+$$
+
+$$
 \quad\Longrightarrow\quad
 \beta_m = \frac{\text{roi}_m \cdot \text{gasto}_m}{sd(y) \cdot \sum_t \tilde{x}_{tm}}
 $$
