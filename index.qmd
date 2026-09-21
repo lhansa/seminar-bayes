@@ -1,8 +1,8 @@
 ---
-title: "Decidir sin certeza"
-subtitle: "Una introducción a la inferencia bayesiana"
+title: "Estás calculando la probabilidad equivocada"
+subtitle: "Una introducción a la inferencia bayesiana usada en una empresa"
 author: "Leonardo Hansa"
-date: today
+date: 9/28/2026
 date-format: "D/M/YYYY"
 lang: es
 execute:
