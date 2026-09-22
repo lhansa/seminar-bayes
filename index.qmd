@@ -1,7 +1,11 @@
 ---
 title: "Estás calculando la probabilidad equivocada"
 subtitle: "Una introducción a la inferencia bayesiana usada en una empresa"
-author: "Leonardo Hansa"
+author:
+  - name: "Leonardo Hansa"
+    affiliations:
+      - name: "CUNEF Universidad"
+      - name: "Ebiquity"
 date: 9/28/2026
 date-format: "D/M/YYYY"
 lang: es
@@ -59,11 +63,6 @@ sala ha venido a comprar.
 
 ¿$p > 0{,}5$?
 
-## Quién soy
-
-<!-- TODO: slide de presentación del ponente. La rellena Leonardo.
-     Un minuto y sin currículum, pero con la parte de empresa delante: de dónde vengo,
-     qué decisiones he visto tomar con estos modelos y por qué doy este seminario. -->
 
 # Primer intento: simular
 
@@ -159,6 +158,10 @@ sirve" y ahí se va el resto del bloque.
 ::: aside
 Esto es una charla, no un curso cuatrimestral, así que dejaré **muchas** cosas fuera.
 :::
+
+## Qué he hecho {.custom-title}
+
+![](img/Ebiquity_Logo.png){width="70%" fig-alt="Logotipo de Ebiquity"}
 
 # El lanzamiento de moneda, en bayesiano
 
@@ -905,7 +908,7 @@ tengas al jefe delante, aprieta la sigma de la lognormal, no su centro: el probl
 cola.
 :::
 
-## Catorce parámetros en vez de tres
+## 7 variables explicativas, 14 parámetros
 
 ```{python}
 #| label: ajuste-medios
@@ -941,7 +944,7 @@ plt.show()
 ```
 
 - `r_hat` máximo `{python} f"{resumen_medios['r_hat'].max():.2f}"`, `ess_bulk` mínimo `{python} int(resumen_medios['ess_bulk'].min())`, divergencias `{python} divergencias_medios`.
-- `mu` se ha ido a `{python} f"{mu_medios_post:.1f}".replace(".", ",").replace("-", "−")`. Con la `Normal(0, 1)` del esqueleto no habría llegado.
+- `mu` se ha ido a `{python} f"{mu_medios_post:.1f}".replace(".", ",").replace("-", "−")` (recuerda el _priori_ `Normal(0, 5)`).
 
 ::: {.notes}
 Aquí el ajuste ya no son tres segundos, es minuto y pico: catorce parámetros y un adstock
