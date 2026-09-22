@@ -646,16 +646,17 @@ MAX_LAG = 8  # rezagos del adstock, el valor por defecto de Meridian
 
 # Cada canal, dividido por la mediana de sus semanas con inversión: una unidad es "una
 # semana normal de ese canal". Ni media ni máximo: hay canales con semanas a cero.
-x = df[[f"{c}_spend" for c in CANALES]].to_numpy(float)
-escala_medios = np.array([np.median(col[col > 0]) for col in x.T])
-x_esc = x / escala_medios
-gasto_total = x.sum(axis=0)
+# `gasto`/`gasto_esc`, no `x`/`x_esc`: ese nombre ya lo usan los controles del esqueleto.
+gasto = df[[f"{c}_spend" for c in CANALES]].to_numpy(float)
+escala_medios = np.array([np.median(col[col > 0]) for col in gasto.T])
+gasto_esc = gasto / escala_medios
+gasto_total = gasto.sum(axis=0)
 
 # rezagos[t, l, m] = canal m en t - l, con ceros antes del principio de la serie. Así el
 # adstock es un producto y no un bucle.
 rezagos = np.zeros((len(df), MAX_LAG + 1, len(CANALES)))
 for lag in range(MAX_LAG + 1):
-    rezagos[lag:, lag, :] = x_esc[: len(df) - lag, :]
+    rezagos[lag:, lag, :] = gasto_esc[: len(df) - lag, :]
 
 
 def pesos_adstock(alpha, max_lag=MAX_LAG):
