@@ -159,9 +159,9 @@ sirve" y ahí se va el resto del bloque.
 Esto es una charla, no un curso cuatrimestral, así que dejaré **muchas** cosas fuera.
 :::
 
-## Qué he hecho {.custom-title}
+## A qué me dedico {.custom-title}
 
-![](img/Ebiquity_Logo.png){width="70%" fig-alt="Logotipo de Ebiquity"}
+![](img/Ebiquity_Logo.png){width="50%" fig-alt="Logotipo de Ebiquity"}
 
 # El lanzamiento de moneda, en bayesiano
 
