@@ -163,6 +163,10 @@ Esto es una charla, no un curso cuatrimestral, así que dejaré **muchas** cosas
 
 ![](img/Ebiquity_Logo.png){width="50%" fig-alt="Logotipo de Ebiquity"}
 
+## Por cierto, te he traído un regalo {.custom-title}
+
+Pero te doy más detalles al final.
+
 # El lanzamiento de moneda, en bayesiano
 
 ## Nota inicial: no digo que no hagas estadística frecuentista
