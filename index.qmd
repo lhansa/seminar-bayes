@@ -455,14 +455,13 @@ charla: la priori se mueve donde hay señal (el ROI) y se queda igual donde no l
 (`alpha`), y la predictiva posterior se contrasta contra los datos que sí tenemos.
 :::
 
-## La pregunta no es si un canal funciona: es cuánto devuelve
+## Lo que pregunta negocio es cuánto devuelve cada medio, su ROI
 
-- La respuesta es un número con incertidumbre, no un sí o un no.
-- Y ya sabemos, por la moneda, que hay otra manera.
+La respuesta es una distribución.
 
 # El esqueleto: nivel y controles del KPI
 
-## Esto lo sabes ajustar de memoria
+## Una primera regresión, sin publi
 
 ```{python}
 #| label: procesado-esqueleto
@@ -477,14 +476,19 @@ x_esc = (x - x.mean(axis=0)) / x.std(axis=0)
 ```
 
 ```{python}
-#| label: tabla-ols-esqueleto
+#| label: ajuste-ols-esqueleto
 #| echo: true
 
 ols_esqueleto = sm.OLS(y_esc, sm.add_constant(x_esc)).fit()
+```
+
+```{python}
+#| label: tabla-ols-esqueleto
+#| echo: false
 
 resumen_ols_esqueleto = pd.Series(
     list(ols_esqueleto.params) + [ols_esqueleto.resid.std(ddof=3)],
-    index=["intercepto"] + CONTROLES + ["error residual"],
+    index=["intercept"] + CONTROLES + ["residuos"],
     name="ols",
 )
 resumen_ols_esqueleto.round(2)
@@ -494,7 +498,7 @@ resumen_ols_esqueleto.round(2)
 Mínimos cuadrados sobre el KPI y los controles, ya estandarizados.
 :::
 
-## Regresión sin medios para entender la sintaxis
+## La regresión de antes, pero con PyMC
 
 ```{python}
 #| label: modelo-esqueleto
@@ -577,7 +581,7 @@ Con profesores en la sala, nombrarlo cuesta una palabra y luego vale por medio a
 cuando llegue la pregunta de si esto no es subjetivo.
 :::
 
-## Ajusto y diagnostico
+## Ajuste y diagnóstico
 
 ```{python}
 #| label: ajuste-esqueleto
