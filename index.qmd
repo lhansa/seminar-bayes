@@ -482,19 +482,18 @@ Esto es lo que te van a poner delante en una reunión de marketing.
 
 # El esqueleto: nivel y controles del KPI
 
-## Empiezo con una regresión sin medios para entender la sintaxis
+## Regresión sin medios para entender la sintaxis
 
 ```{python}
 #| label: procesado-esqueleto
 #| echo: false
 y = df["revenue"].to_numpy()
-z = df[CONTROLES].to_numpy(float)
+x = df[CONTROLES].to_numpy(float)
 semanas = df["time"].dt.date.astype(str)
 
 y_media, y_sd = y.mean(), y.std()
 y_esc = (y - y_media) / y_sd
-z_esc = (z - z.mean(axis=0)) / z.std(axis=0)
-
+x_esc = (x - x.mean(axis=0)) / x.std(axis=0)
 ```
 
 ```{python}
@@ -505,15 +504,11 @@ with pm.Model(coords={"control": CONTROLES, "semana": semanas}) as esqueleto:
     gamma = pm.Normal("gamma", 0.0, 1.0, dims="control")
     sigma = pm.Exponential("sigma", 1.0)
 
-    media = mu + pt.dot(z_esc, gamma)
+    media = mu + pt.dot(x_esc, gamma)
     pm.Normal("y", mu=media, sigma=sigma, observed=y_esc, dims="semana")
 ```
 
-- `mu`: es el nivel del KPI escalado.
-- `gamma`: cuánto lo mueve ese control cuando sube una desviación típica.
-- `sigma`: lo que queda sin explicar.
-
-## Ahora compruebo si las prioris tienen sentido, antes de usar datos
+## Antes de usar datos, ¿las prioris tienen sentido?
 
 ```{python}
 #| label: prev-esqueleto
@@ -529,7 +524,7 @@ def construir_esqueleto(mu_sd=1.0, gamma_sd=1.0, sigma_prior="exp"):
         else:
             sigma = pm.HalfNormal("sigma", 5.0)
 
-        media = mu + pt.dot(z_esc, gamma)
+        media = mu + pt.dot(x_esc, gamma)
         pm.Normal("y", mu=media, sigma=sigma, observed=y_esc, dims="semana")
     return modelo
 
@@ -568,7 +563,7 @@ fig.tight_layout()
 plt.show()
 ```
 
-A la derecha, el `{python} f"{pct_negativas_meridian:.1f}"` % de las semanas simuladas factura menos que nada.
+A la derecha, el `{python} f"{pct_negativas_meridian:.1f}"` % de las semanas simuladas factura negativo.
 
 ::: {.notes}
 Las prioris de Meridian no son un error: su modelo es jerárquico por regiones, con miles de
@@ -586,7 +581,7 @@ cuando llegue la pregunta de si esto no es subjetivo.
 
 ```{python}
 #| label: ajuste-esqueleto
-#| echo: true
+#| echo: false
 
 with esqueleto:
     idata_esqueleto = pm.sample(
@@ -760,9 +755,9 @@ eje.legend()
 plt.show()
 ```
 
-- mediana `{python} f"{priori_roi.median():.2f}".replace(".", ",")`,
-- el 90 % central entre `{python} f"{roi_bajo:.2f}".replace(".", ",")` y `{python} f"{roi_alto:.2f}".replace(".", ",")`, 
-- un `{python} f"{100 * priori_roi.cdf(1):.0f}"` % de probabilidad de estar perdiendo dinero.
+::: aside 
+Un `{python} f"{100 * priori_roi.cdf(1):.0f}"` % de probabilidad de estar perdiendo dinero.
+:::
 
 ::: {.notes}
 Traducida a la reunión: "asumo que la publicidad devuelve algo más de lo que cuesta, pero
@@ -786,11 +781,9 @@ vale su ROI por lo invertido:
 
 $$
 \beta_m \cdot sd(y) \cdot \sum_t \tilde{x}_{tm} = \text{roi}_m \cdot \text{gasto}_m
-\quad\Longrightarrow\quad
 $$
 
 $$
-\quad\Longrightarrow\quad
 \beta_m = \frac{\text{roi}_m \cdot \text{gasto}_m}{sd(y) \cdot \sum_t \tilde{x}_{tm}}
 $$
 
@@ -834,7 +827,7 @@ with pm.Model(coords=coords_medios) as medios:
     alpha = pm.Uniform("alpha", 0.0, 1.0, dims="canal")
     roi = pm.LogNormal("roi", mu=0.2, sigma=0.9, dims="canal")
     gamma = pm.Normal("gamma", 0.0, 1.0, dims="control")
-    mu = pm.Normal("mu", 0.0, 5.0)
+    mu = pm.Normal("mu", 0.0, 5.0)  
     sigma = pm.Exponential("sigma", 1.0)
 
     pesos = pesos_adstock(alpha)
@@ -845,7 +838,7 @@ with pm.Model(coords=coords_medios) as medios:
     )
     contribucion = pm.Deterministic("contribucion", roi * gasto_total, dims="canal")
 
-    media = mu + pt.dot(adstock, beta) + pt.dot(z_esc, gamma)
+    media = mu + pt.dot(adstock, beta) + pt.dot(x_esc, gamma)
     pm.Normal("y", mu=media, sigma=sigma, observed=y_esc, dims="semana")
 ```
 
@@ -894,11 +887,11 @@ tengas al jefe delante, aprieta la sigma de la lognormal, no su centro: el probl
 cola.
 :::
 
-## Catorce parámetros en vez de tres: ya no son tres segundos, y hay que volver a mirar
+## Catorce parámetros en vez de tres
 
 ```{python}
 #| label: ajuste-medios
-#| echo: true
+#| echo: false
 
 with medios:
     idata_medios = pm.sample(
@@ -1021,8 +1014,8 @@ p_c2_mejor = float((roi_post[:, i_c2] > roi_post[:, i_c0]).mean())
 
 > `Channel2` devuelve entre `{python} f"{hdi_c2[0]:.1f}".replace(".", ",")` y `{python} f"{hdi_c2[1]:.1f}".replace(".", ",")` euros por cada euro invertido, con un 90 % de probabilidad.
 
-- Es el candidato a subir presupuesto, pero sin afirmarlo: la probabilidad de que le gane a `Channel0` es del `{python} f"{100 * p_c2_mejor:.0f}"` %, poco más que una moneda.
-- Eso es lo que no sabía decir la regresión del principio.
+<!-- - Es el candidato a subir presupuesto, pero sin afirmarlo: la probabilidad de que le gane a `Channel0` es del `{python} f"{100 * p_c2_mejor:.0f}"` %, poco más que una moneda.
+- Eso es lo que no sabía decir la regresión del principio. -->
 
 ::: {.notes}
 Las dos cifras salen de `az.hdi`, no las he escrito yo. Y el intervalo es enorme: lo mismo
@@ -1148,15 +1141,7 @@ la charla, y aun así es el único de la lista que arranca donde arranca esta sa
 justifica, y va escrita en la slide para no tener que decirla.
 :::
 
-## Te suscribes y te llevas el notebook del radón, con el vídeo de los jerárquicos
-
-![leonardohansa.com/regalo-bayes](img/qr.png){fig-align="center" width="280"}
-
-::: aside
-El notebook es público, pero desde aquí no hay atajo: se llega suscribiéndote.
-:::
-
-# leonardohansa.com {#preguntas}
+## leonardohansa.com/regalo-bayes {#preguntas}
 
 ![leonardohansa.com/regalo-bayes](img/qr.png){fig-align="center" width="240"}
 
