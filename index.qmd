@@ -231,7 +231,7 @@ ax.legend()
 plt.show()
 ```
 
-## Esa distribución no se ha calculado: se ha recorrido
+## Esa distribución se simula iterativamente 
 
 ```{python}
 #| label: graf-caminata
