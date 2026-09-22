@@ -718,7 +718,7 @@ natural de quien ha leído el código.
 
 - Variable independiente transformada. 
 - KPI estandarizado.
-- Modelamos conversiones, no facturación.
+- `beta`: desviaciones típicas de ingreso por unidad de inversión rezagada y dividida entre su mediana.
 
 ::: aside
 
@@ -730,6 +730,23 @@ El de marketing no sabrá guiarte.
 Esta slide es una pregunta a la sala y un silencio. No rellenarlo. Nadie tiene esa
 intuición: yo tampoco, y llevo años con esto. Si alguien levanta la mano, preguntarle qué
 valor le parece razonable y dejar que se oiga en voz alta lo raro que suena.
+
+El tercer bullet se lee entero y despacio, que ahí está el chiste: esas son las unidades
+de verdad de `beta`, no una caricatura.
+
+Si preguntan por qué modelamos facturación y no conversiones —y en una sala de marketing
+lo preguntan—: el modelo es exactamente el mismo, lo que cambia es que para poner la
+priori sobre el ROI sigues necesitando un euro por unidad. Sin ese número, la priori
+vuelve a `beta`, y a `beta` no la sabe poner nadie, que es justo lo que acaba de pasar en
+esta slide. Por eso el CSV de Google trae `revenue_per_conversion` como columna de datos:
+ese valor se da, no se estima.
+
+Y la consecuencia, que es la parte que interesa: cuando el valor por conversión no es
+constante, y encima es incierto, la priori del ROI carga con dos incertidumbres a la vez
+—cuánto mueve el medio las conversiones y cuánto vale cada una— y ya no se puede auditar
+por separado. En estos datos no pasa: el valor por conversión son dos céntimos clavados,
+varía un 0,08 % en las 156 semanas, así que modelar conversiones o facturación es el mismo
+modelo con otro eje.
 :::
 
 ## Sobre lo que sí tiene intuición es sobre el ROI
@@ -1164,14 +1181,18 @@ Orden esperado de las preguntas, de más a menos probable:
    parece ruido, `r_hat` por debajo de 1,01, cero divergencias.
 5. **"¿Cuánto tarda? ¿Necesito máquina?"** Tres segundos el esqueleto, minuto y pico el de
    medios, y las dos cifras salen de un portátil. Decirlo con esas palabras.
-6. **"¿Y una priori no informativa?"** Backup: `priori-plana`.
-7. **"¿Cómo funciona el muestreo por dentro?"** No hace falta backup: la caminata del
+6. **"¿Y si mi KPI no es facturación?"** No hace falta backup: se vuelve a "¿Alguien
+   tiene una intuición sobre `beta`?" y la respuesta está en la nota del ponente de esa
+   slide. En una línea: el modelo es el mismo, pero para escribir la priori en euros hace
+   falta un euro por unidad, y ese número se da como dato.
+7. **"¿Y una priori no informativa?"** Backup: `priori-plana`.
+8. **"¿Cómo funciona el muestreo por dentro?"** No hace falta backup: la caminata del
    Metropolis sigue en el recorrido, se vuelve a ella.
-8. **"¿Qué pinta tienen los datos?"** Backup: `series`. Las 156 semanas dibujadas, ingresos
+9. **"¿Qué pinta tienen los datos?"** Backup: `series`. Las 156 semanas dibujadas, ingresos
    arriba e inversión abajo. Sale del recorrido de la charla: si nadie pregunta, no se enseña.
-9. **"¿Vale para mi TFM, para mi campo?"** Vale para cualquier sitio donde haya pocos
-   datos y algo sabido de antes, que es la situación de un TFM entero. El bucle no cambia:
-   lo que cambia es en qué unidades se escribe la priori. Enlazar con `el-lunes`.
+10. **"¿Vale para mi TFM, para mi campo?"** Vale para cualquier sitio donde haya pocos
+    datos y algo sabido de antes, que es la situación de un TFM entero. El bucle no cambia:
+    lo que cambia es en qué unidades se escribe la priori. Enlazar con `el-lunes`.
 
 Para saltar a una slide de backup: `G`, el identificador y Enter.
 :::
