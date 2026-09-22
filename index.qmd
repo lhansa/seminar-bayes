@@ -423,9 +423,22 @@ CONTROLES = ["competitor_sales_control", "sentiment_score_control"]
 
 ## `{python} len(df)` semanas de un anunciante nacional, simuladas por Google Meridian
 
+```{python}
+#| label: correlaciones-canales
+#| include: false
+
+correlaciones = df[[f"{c}_spend" for c in CANALES]].corr()
+correlaciones.index = correlaciones.columns = CANALES
+```
+
 - Cinco medios publicatarios de pago, con impresiones e inversión.
 - Otra variables: ventas de la competencia y sentimiento de marca.
 - Variable objetivo: ingresos (`revenue`).
+- Y los canales se mueven juntos: `Channel2`, `Channel3` y `Channel4` correlacionan entre sí por encima de `{python} f"{min(correlaciones.loc['Channel2', 'Channel3'], correlaciones.loc['Channel2', 'Channel4'], correlaciones.loc['Channel3', 'Channel4']):.2f}"`, y son `{python} len(df)` filas para separarlos.
+
+::: aside
+Cinco canales, `{python} len(df)` semanas y la pregunta de la reunión: ¿cuál subo?
+:::
 
 ::: {.notes}
 Si preguntan si recuperamos el ROI verdadero: Google no publica los valores generadores de
@@ -435,54 +448,14 @@ charla: la priori se mueve donde hay señal (el ROI) y se queda igual donde no l
 (`alpha`), y la predictiva posterior se contrasta contra los datos que sí tenemos.
 :::
 
-## La regresión que ajusta todo el mundo: ingresos contra inversión, canal a canal
+## La pregunta no es si un canal funciona: es cuánto devuelve
 
-```{python}
-#| label: tabla-ols
-
-X = df[[f"{c}_spend" for c in CANALES] + CONTROLES]
-ols = sm.OLS(df["revenue"], sm.add_constant(X)).fit()
-
-filas = [f"{c}_spend" for c in CANALES]
-resumen_ols = pd.DataFrame({
-    "roi_ols": ols.params[filas].values,
-    "ic 5%": ols.conf_int().loc[filas, 0].values,
-    "ic 95%": ols.conf_int().loc[filas, 1].values,
-    "p-valor": ols.pvalues[filas].values,
-}, index=CANALES)
-resumen_ols.round(2)
-```
-
-::: aside
-Mínimos cuadrados. El coeficiente de cada canal se lee directamente como ROI: euros de ingreso incremental por euro invertido.
-:::
-
-## Ningún canal es significativo y el $R^2$ es `{python} f"{ols.rsquared:.2f}"`
-
-```{python}
-#| label: correlaciones-canales
-#| include: false
-
-correlaciones = df[[f"{c}_spend" for c in CANALES]].corr()
-correlaciones.index = correlaciones.columns = CANALES
-```
-
-- El p-valor más bajo, el de `Channel3`, es `{python} f"{ols.pvalues['Channel3_spend']:.2f}"`.
-- Los intervalos van de perder dinero a ganar el triple: `Channel2` llega a `{python} f"{ols.conf_int().loc['Channel2_spend', 1]:.1f}"` veces lo invertido.
-- Y los canales se mueven juntos: `Channel2`, `Channel3` y `Channel4` correlacionan entre sí por encima de `{python} f"{min(correlaciones.loc['Channel2', 'Channel3'], correlaciones.loc['Channel2', 'Channel4'], correlaciones.loc['Channel3', 'Channel4']):.2f}"`, y son `{python} len(df)` filas para separarlos, más el retraso con el que vende cada anuncio.
-
-::: aside
-Esto es lo que te van a poner delante en una reunión de marketing.
-:::
-
-## No es que falte un modelo más grande
-
-- Las preguntas que importan no se responden con un p-valor.
+- La respuesta es un número con incertidumbre, no un sí o un no.
 - Y ya sabemos, por la moneda, que hay otra manera.
 
 # El esqueleto: nivel y controles del KPI
 
-## Regresión sin medios para entender la sintaxis
+## Esto lo sabes ajustar de memoria
 
 ```{python}
 #| label: procesado-esqueleto
@@ -495,6 +468,26 @@ y_media, y_sd = y.mean(), y.std()
 y_esc = (y - y_media) / y_sd
 x_esc = (x - x.mean(axis=0)) / x.std(axis=0)
 ```
+
+```{python}
+#| label: tabla-ols-esqueleto
+#| echo: true
+
+ols_esqueleto = sm.OLS(y_esc, sm.add_constant(x_esc)).fit()
+
+resumen_ols_esqueleto = pd.Series(
+    list(ols_esqueleto.params) + [ols_esqueleto.resid.std(ddof=3)],
+    index=["intercepto"] + CONTROLES + ["error residual"],
+    name="ols",
+)
+resumen_ols_esqueleto.round(2)
+```
+
+::: aside
+Mínimos cuadrados sobre el KPI y los controles, ya estandarizados.
+:::
+
+## Regresión sin medios para entender la sintaxis
 
 ```{python}
 #| label: modelo-esqueleto
@@ -624,7 +617,7 @@ datos que ha visto. Se ve entera en el bloque de medios, donde además dice algo
 diría.
 :::
 
-## Hasta aquí la sintaxis de una regresión múltiple
+## Mismos datos, mismos números: hasta aquí no has ganado nada
 
 ```{python}
 #| label: varianza-esqueleto
@@ -633,6 +626,29 @@ diría.
 sigma_esqueleto = float(idata_esqueleto.posterior["sigma"].mean())
 varianza_explicada_esqueleto = 1 - sigma_esqueleto ** 2
 ```
+
+```{python}
+#| label: comparacion-ols-esqueleto
+
+mu_esqueleto = float(idata_esqueleto.posterior["mu"].mean())
+gamma_esqueleto = idata_esqueleto.posterior["gamma"].mean(dim=["chain", "draw"]).values
+
+comparacion_esqueleto = pd.DataFrame({
+    "ols": resumen_ols_esqueleto.values,
+    "posteriori": [mu_esqueleto, *gamma_esqueleto, sigma_esqueleto],
+}, index=resumen_ols_esqueleto.index)
+comparacion_esqueleto.round(2)
+```
+
+::: {.notes}
+Con prioris flojas y `{python} len(df)` filas, la priori no manda: por eso salen los números
+de siempre. Quien quiera ver a la priori mandar que espere al bloque de medios, donde `mu`
+pasa de `Normal(0, 1)` a `Normal(0, 5)` porque el modelo es otro.
+
+Y la frase que sostiene el resto de la charla: no me paso a bayesiana porque mínimos
+cuadrados falle aquí. Me paso porque el modelo del bloque siguiente —adstock, la priori
+sobre el ROI, `beta` deducida— no se puede escribir con mínimos cuadrados.
+:::
 
 Ahora metemos los medios (que es para lo que nos pagan).
 
@@ -688,12 +704,12 @@ plt.show()
 Priori: `alpha ~ Uniform(0, 1)`: ni idea de cuánto dura.
 
 ::: {.notes}
-El adstock arregla uno de los dos supuestos falsos de la regresión del principio: que el
-anuncio de esta semana no vende nada la semana que viene. El otro —que el euro un millón
-hace lo mismo que el primero— es la saturación, la curva de Hill, y hoy se queda fuera. Se
-dice de palabra y se sigue: se ha probado, mete un parámetro por canal que los datos no
-saben estimar, ensancha los intervalos del ROI y no cambia el orden de los canales. Diez
-minutos de explicación que no tienen nada de bayesiano.
+El adstock arregla uno de los dos supuestos falsos de una regresión sobre la inversión sin
+más: que el anuncio de esta semana no vende nada la semana que viene. El otro —que el euro
+un millón hace lo mismo que el primero— es la saturación, la curva de Hill, y hoy se queda
+fuera. Se dice de palabra y se sigue: se ha probado, mete un parámetro por canal que los
+datos no saben estimar, ensancha los intervalos del ROI y no cambia el orden de los
+canales. Diez minutos de explicación que no tienen nada de bayesiano.
 
 La `Uniform(0, 1)` de `alpha` no es pereza: es la respuesta honesta. Y al final del bloque
 hay que decir que la posteriori la devuelve casi tal cual: estos datos no distinguen un
@@ -975,11 +991,12 @@ Y donde falla la predictiva posterior no es donde se espera: clava el centro y s
 abajo, generando semanas de facturación muy por debajo de la peor semana real. Un error
 gaussiano no sabe que la facturación tiene un suelo.
 
-Si preguntan si el 30 % de aquí y el 0,24 del `R²` del OLS son lo mismo: no. `1 − σ²` es el
-análogo bayesiano, no el `R²`; corre sobre el KPI ya estandarizado, no sobre los ingresos en
-euros del bloque anterior. Ni la métrica ni la escala coinciden, aunque la comparación nos
-favorezca. (Detalle sin importancia práctica si alguien lo pincha: es `1 − E[σ]²`, no
-`1 − E[σ²]`; la diferencia es de 0,25 puntos.)
+Si preguntan si esto es un `R²`: no, es `1 − σ²`, el análogo bayesiano. Pero corre sobre el
+mismo KPI estandarizado en los dos modelos, así que el salto del
+`{python} f"{100 * varianza_explicada_esqueleto:.0f}"` % del esqueleto al
+`{python} f"{100 * (1 - sigma_medios ** 2):.0f}"` % de aquí sí se puede leer en limpio: eso
+es lo que han aportado los medios. (Detalle sin importancia práctica si alguien lo pincha:
+es `1 − E[σ]²`, no `1 − E[σ²]`; la diferencia es de 0,25 puntos.)
 :::
 
 ## La pregunta que le importa a alguien
@@ -1007,15 +1024,16 @@ plt.show()
 
 ::: {.notes}
 Antes de que lo diga alguien desde la tercera fila: este intervalo no es más corto que el
-de la regresión del principio por ser bayesiano. Es más corto por tres cosas distintas y
-solo una lo es. El adstock, que es estructura: reparte la inversión en el tiempo en vez de
-pegarla entera a la semana en que se pagó. La priori, que es regularización, y eso también
-lo hace un ridge. Y la interpretación, que es lo único que compro aquí: poder decir "con
-probabilidad del 90 %" sobre este intervalo y, dos slides más allá, enseñar cuánto de él lo
-he puesto yo. Eso segundo no lo hace ridge.
+de una regresión sobre la inversión, sin más, por ser bayesiano. Es más corto por tres
+cosas distintas y solo una lo es. El adstock, que es estructura: reparte la inversión en el
+tiempo en vez de pegarla entera a la semana en que se pagó. La priori, que es
+regularización, y eso también lo hace un ridge. Y la interpretación, que es lo único que
+compro aquí: poder decir "con probabilidad del 90 %" sobre este intervalo y, dos slides más
+allá, enseñar cuánto de él lo he puesto yo. Eso segundo no lo hace ridge.
 
-Y que nadie se vaya creyendo que ha comprado precisión: el `R²` del OLS era 0,24 y este
-modelo explica alrededor del 30 % de la varianza. Seis puntos. Lo que cambia no es cuánto
+Y que nadie se vaya creyendo que ha comprado precisión: el modelo sin medios explicaba
+alrededor del `{python} f"{100 * varianza_explicada_esqueleto:.0f}"` % de la varianza y
+este, del `{python} f"{100 * (1 - sigma_medios ** 2):.0f}"` %. Lo que cambia no es cuánto
 explica: es qué se puede decir de lo que explica.
 :::
 
@@ -1033,7 +1051,7 @@ p_c2_mejor = float((roi_post[:, i_c2] > roi_post[:, i_c0]).mean())
 > `Channel2` devuelve entre `{python} f"{hdi_c2[0]:.1f}".replace(".", ",")` y `{python} f"{hdi_c2[1]:.1f}".replace(".", ",")` euros por cada euro invertido, con un 90 % de probabilidad.
 
 <!-- - Es el candidato a subir presupuesto, pero sin afirmarlo: la probabilidad de que le gane a `Channel0` es del `{python} f"{100 * p_c2_mejor:.0f}"` %, poco más que una moneda.
-- Eso es lo que no sabía decir la regresión del principio. -->
+- Eso es lo que no sabía decir una regresión sin más. -->
 
 ::: {.notes}
 Las dos cifras salen de `az.hdi`, no las he escrito yo. Y el intervalo es enorme: lo mismo
@@ -1090,9 +1108,9 @@ esta slide es el sitio donde contestarla. Cuatro apoyos y una concesión, y cabe
 
 Uno: las decisiones del frecuentista también son elecciones, solo que sin escribir. Qué
 covariables entran, qué forma funcional, dónde se corta el p-valor, cuándo se deja de
-recoger datos. La regresión del principio decidió que el anuncio de esta semana no vende
-nada la semana que viene, que es un supuesto brutal, y no aparecía en ninguna tabla. La
-priori al menos está escrita y se puede auditar.
+recoger datos. Una regresión sobre la inversión sin más decide que el anuncio de esta
+semana no vende nada la semana que viene, que es un supuesto brutal, y no aparecía en
+ninguna tabla. La priori al menos está escrita y se puede auditar.
 
 Dos: y se puede medir cuánto ha aportado. Es esta slide, señalarla: donde la posteriori se
 separa de la priori, han hablado los datos; donde se le parece, el número lo puse yo.
@@ -1301,7 +1319,7 @@ plt.show()
 ::: {.notes}
 La pinta de los datos, para quien pregunte por ellos: 156 semanas, ingresos arriba e
 inversión canal a canal abajo. Se ve que los canales suben y bajan a la vez, que es el
-bullet de la slide del OLS con dibujo en vez de con un número.
+bullet de la slide de datos con dibujo en vez de con un número.
 :::
 
 ## El lunes por la mañana {#el-lunes}
