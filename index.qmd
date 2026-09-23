@@ -734,7 +734,7 @@ cuadrados falle aquí. Me paso porque el modelo del bloque siguiente —adstock,
 sobre el ROI, `beta` deducida— no se puede escribir con mínimos cuadrados.
 :::
 
-Ahora metemos los medios (que es para lo que nos pagan).
+## Ahora metemos los medios (que es para lo que nos pagan).
 
 # El modelo de medios: ¿qué prioris necesitamos?
 
