@@ -678,33 +678,56 @@ datos que ha visto. Se ve entera en el bloque de medios, donde además dice algo
 diría.
 :::
 
-## Mismos datos, mismos números
+## Cada parámetro es una distribución, y se lee en euros
 
 ```{python}
-#| label: varianza-esqueleto
+#| label: interpretacion-esqueleto
 #| include: false
 
 sigma_esqueleto = float(idata_esqueleto.posterior["sigma"].mean())
 varianza_explicada_esqueleto = 1 - sigma_esqueleto ** 2
+
+# gamma y sigma están en desviaciones típicas del KPI: por y_sd, en euros semanales.
+hdi_esqueleto = az.hdi(idata_esqueleto, var_names=["gamma", "sigma"], hdi_prob=0.9) * y_sd
+hdi_competencia = hdi_esqueleto["gamma"].sel(control="competitor_sales_control").values
+hdi_sentimiento = hdi_esqueleto["gamma"].sel(control="sentiment_score_control").values
+hdi_sigma_euros = hdi_esqueleto["sigma"].values
+
+gamma_sentimiento = idata_esqueleto.posterior["gamma"].sel(control="sentiment_score_control")
+p_sentimiento_sube = float((gamma_sentimiento > 0).mean())
+p_valor_sentimiento = resumen_ols_esqueleto.loc["sentiment_score_control", "p-valor"]
+
+
+def euros(valor):
+    """Redondea a miles y separa con punto: -164008.5 -> '−164.000'."""
+    return f"{round(valor, -3):,.0f}".replace(",", ".").replace("-", "−")
 ```
 
-```{python}
-#| label: comparacion-ols-esqueleto
+- Si la competencia vende una desviación típica más, facturo entre `{python} euros(-hdi_competencia[1])` y `{python} euros(-hdi_competencia[0])` € menos a la semana.
+- Con el sentimiento hay un `{python} f"{100 * p_sentimiento_sube:.0f}"` % de probabilidad de que empuje hacia arriba, pero su efecto va de `{python} euros(hdi_sentimiento[0])` a `{python} euros(hdi_sentimiento[1])` €.
+- Los controles explican el `{python} f"{100 * varianza_explicada_esqueleto:.0f}"` % de la varianza: una semana cualquiera se aparta de lo previsto entre `{python} euros(hdi_sigma_euros[0])` y `{python} euros(hdi_sigma_euros[1])` €.
 
-mu_esqueleto = float(idata_esqueleto.posterior["mu"].mean())
-gamma_esqueleto = idata_esqueleto.posterior["gamma"].mean(dim=["chain", "draw"]).values
-
-comparacion_esqueleto = pd.DataFrame({
-    "ols": resumen_ols_esqueleto["ols"].values,
-    "posteriori": [mu_esqueleto, *gamma_esqueleto, sigma_esqueleto],
-}, index=resumen_ols_esqueleto.index)
-comparacion_esqueleto.round(2)
-```
+::: aside
+Intervalos al 90 % de la posteriori. El efecto de cada control, por cada desviación típica
+que se mueve.
+:::
 
 ::: {.notes}
-Con prioris flojas y `{python} len(df)` filas, la priori no manda: por eso salen los números
-de siempre. Quien quiera ver a la priori mandar que espere al bloque de medios, donde `mu`
-pasa de `Normal(0, 1)` a `Normal(0, 5)` porque el modelo es otro.
+Con prioris flojas y `{python} len(df)` filas, la priori no manda: los centros son los del
+OLS con el que empezó el bloque, y si alguien lo comprueba, coinciden. Quien quiera ver a la
+priori mandar que espere al bloque de medios, donde `mu` pasa de `Normal(0, 1)` a
+`Normal(0, 5)` porque el modelo es otro. Lo que cambia aquí no es el número, es la lectura:
+cada frase lleva su incertidumbre en euros, y se puede decir en una reunión sin traducir.
+
+El sentimiento es el que merece la pausa. En la tabla del OLS salía con un p-valor de
+`{python} f"{p_valor_sentimiento:.2f}".replace(".", ",")`: "no significativo", y ahí se
+acaba la conversación. Aquí sale un `{python} f"{100 * p_sentimiento_sube:.0f}"` %.
+Cuidado con cómo se dice: no es que la bayesiana vea un efecto que el p-valor no ve. Son
+los mismos datos respondiendo a otra pregunta. El p-valor dice cómo de raros serían estos
+datos si el efecto fuera cero; la posteriori, qué me creo del efecto después de verlos. Es
+la vuelta al problema de la moneda, otra vez. Y el `{python} f"{100 * p_sentimiento_sube:.0f}"` %
+no autoriza a decir que el sentimiento funciona: el intervalo cruza el cero, y eso también
+va en la frase.
 
 Y la frase que sostiene el resto de la charla: no me paso a bayesiana porque mínimos
 cuadrados falle aquí. Me paso porque el modelo del bloque siguiente —adstock, la priori
