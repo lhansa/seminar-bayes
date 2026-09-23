@@ -220,7 +220,8 @@ with pm.Model() as modelo_moneda:
 p_cara_post = idata_moneda.posterior["p_cara"].values.flatten()
 
 fig, ax = plt.subplots(figsize=(9, 4))
-ax.hist(p_cara_post, bins=50, density=True, edgecolor="white", color="#666666", alpha=0.85)
+# con más barras, el ruido de la simulación abre un hueco en la moda (#96)
+ax.hist(p_cara_post, bins=20, density=True, edgecolor="white", color="#666666", alpha=0.85)
 ax.axvline(0.5, color="black", linestyle="--", linewidth=1.5, label="p = 0,5 (justa)")
 ax.axvline(0.6, color=ACENTO, linewidth=2, label="p observado = 0,60")
 ax.set_xlabel("p (probabilidad de cara)")
@@ -370,7 +371,7 @@ Ese número es la probabilidad de que la probabilidad de obtener cara sea estric
 hdi = az.hdi(p_cara_post, hdi_prob=0.95)
 
 fig, ax = plt.subplots(figsize=(9, 4))
-ax.hist(p_cara_post, bins=50, density=True, edgecolor="white", color="#BBBBBB", alpha=0.9)
+ax.hist(p_cara_post, bins=20, density=True, edgecolor="white", color="#BBBBBB", alpha=0.9)
 ax.axvspan(hdi[0], hdi[1], color=ACENTO, alpha=0.18)
 ax.axvline(0.5, color="black", linestyle="--", linewidth=1.5, label="p = 0,5")
 ax.set_xlabel("p (probabilidad de cara)")
