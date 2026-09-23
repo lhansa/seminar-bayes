@@ -523,11 +523,11 @@ Mínimos cuadrados sobre el KPI y los controles, ya estandarizados.
 #| echo: true
 with pm.Model(coords={"control": CONTROLES, "semana": semanas}) as esqueleto:
     mu = pm.Normal("mu", 0.0, 1.0)
-    gamma = pm.Normal("gamma", 0.0, 1.0, dims=CONTROLES)
+    gamma = pm.Normal("gamma", 0.0, 1.0, dims="control")
     sigma = pm.Exponential("sigma", 1.0)
 
     media = mu + pt.dot(x_esc, gamma)
-    pm.Normal("y", mu=media, sigma=sigma, observed=y_esc, dims=semanas)
+    pm.Normal("y", mu=media, sigma=sigma, observed=y_esc, dims="semana")
 ```
 
 ## Antes de usar datos, ¿las prioris tienen sentido?
