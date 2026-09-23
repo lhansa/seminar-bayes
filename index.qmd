@@ -495,14 +495,15 @@ La respuesta es una distribución.
 #| label: graf-serie-revenue-canal
 
 canal = "Channel0"
-revenue_esc = (df["revenue"] - df["revenue"].mean()) / df["revenue"].std()
-canal_esc = (df[f"{canal}_spend"] - df[f"{canal}_spend"].mean()) / df[f"{canal}_spend"].std()
 
-fig, eje = plt.subplots(figsize=(10, 4))
-eje.plot(df["time"], revenue_esc, color=ACENTO, label="Ingresos")
-eje.plot(df["time"], canal_esc, color=GRISES[1], label=canal, lw=1)
-eje.set_ylabel("Valor estandarizado")
-eje.legend(ncol=2, fontsize=9)
+fig, ejes = plt.subplots(2, 1, figsize=(10, 5), sharex=True,
+                         gridspec_kw={"height_ratios": [3, 2]})
+
+ejes[0].plot(df["time"], df["revenue"] / 1e6, color=ACENTO)
+ejes[0].set_ylabel("Ingresos (M€)")
+
+ejes[1].bar(df["time"], df[f"{canal}_spend"] / 1e3, width=6, color=GRISES[1])
+ejes[1].set_ylabel(f"{canal} (k€)")
 
 fig.tight_layout()
 plt.show()
