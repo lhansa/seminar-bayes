@@ -1192,40 +1192,70 @@ negarlo.
 - Obtendrás una distribución como resultado, no un número. La incertidumbre formará parte de tu respuesta directamente.
 
 
-## Lo que no ha cabido
+# Ahora tú
 
-::: {.incremental}
+## Por dónde seguir (1)
 
-- Jerárquicos: varios mercados en vez de uno nacional.
-- Geo-level: por debajo del agregado nacional.
-- Calibración con experimentos: contrastar el ROI del modelo con un test real.
-- Saturación de Hill: se ha medido y ha sobrado.
+:::: {.columns}
 
+::: {.column width="50%"}
+- Estas diapositivas.
 :::
 
-::: {.notes}
-Esta slide existe para que la pregunta de la sala caiga donde quiero. Si preguntan por
-Hill, la respuesta ya está medida y contada en el bloque anterior. Las otras tres son
-extensiones de verdad, no excusas por falta de tiempo.
+::: {.column width="50%"}
+![https://leonardohansa.com/seminar-bayes](img/diapositivas.png)
 :::
 
-## Para profundizar
+::::
 
-- McElreath, *Statistical Rethinking*: el que he mencionado antes. Libro y clases en YouTube, enteras y gratis.
-- Gelman y Hill, *Data Analysis Using Regression and Multilevel/Hierarchical Models*: empieza en la regresión que ya sabes y termina en multinivel.
-- `google/meridian`, de donde sale este modelo.
-- PyMC, para escribirlo.
+## Por dónde seguir (2)
 
-::: {.notes}
-McElreath va primero porque es el único que se ha nombrado durante la charla —en el
-muestreo, con el capítulo del rey Markov—; aquí no se presenta, se recoge. Si preguntan
-por dónde empezar a leer, es ese y no hay segunda opción que dar.
+:::: {.columns}
 
-Gelman y Hill se queda a propósito, no por inercia: entró con el radón, que ya no está en
-la charla, y aun así es el único de la lista que arranca donde arranca esta sala
-—regresión— y acaba en los jerárquicos de la slide anterior. Esa es la línea que lo
-justifica, y va escrita en la slide para no tener que decirla.
+::: {.column width="50%"}
+- Github de PyMC con ejemplos.
 :::
+
+::: {.column width="50%"}
+![https://github.com/pymc-devs/pymc-examples](img/pymc-github.png)
+:::
+
+::::
+
+
+## Por dónde seguir (3)
+
+:::: {.columns}
+
+::: {.column width="50%"}
+![Notebook de regalo con material extra.](img/notebook.png)
+:::
+
+::: {.column width="50%"}
+![https://leonardohansa.com/regalo-bayes](img/qr.png)
+:::
+
+::::
+
+
+## Dónde profundizar
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- Sesiones grabadas en YouTube.
+- Traducción online disponible:
+  + https://xcelab.net/rm/
+  + Notable la de Solomon Kurz.
+  + Disponible la de PyMC.
+:::
+
+::: {.column width="50%"}
+![Statistical Rethinking, de Richard McElreath](img/statistical-rethinking.png)
+:::
+
+::::
+
 
 ## leonardohansa.com/regalo-bayes {#preguntas}
 
