@@ -503,15 +503,12 @@ ols_esqueleto = sm.OLS(y_esc, sm.add_constant(x_esc)).fit()
 #| label: tabla-ols-esqueleto
 #| echo: false
 
-resumen_ols_esqueleto = pd.Series(
-    list(ols_esqueleto.params) + [ols_esqueleto.resid.std(ddof=3)],
-    index=["intercept"] + CONTROLES + ["residuos"],
-    name="ols",
-)
-resumen_ols_esqueleto.round(2)
+resumen_ols_esqueleto = pd.DataFrame({
+    "ols": list(ols_esqueleto.params) + [ols_esqueleto.resid.std(ddof=3)],
+    "p-valor": list(ols_esqueleto.pvalues) + [np.nan],
+}, index=["intercept"] + CONTROLES + ["residuos"])
+resumen_ols_esqueleto.round({"ols": 2, "p-valor": 3})
 ```
-
-<!-- Add p values to the resumen_ols_esqueleto -->
 
 ::: aside
 Mínimos cuadrados sobre el KPI y los controles, ya estandarizados.
@@ -666,7 +663,7 @@ mu_esqueleto = float(idata_esqueleto.posterior["mu"].mean())
 gamma_esqueleto = idata_esqueleto.posterior["gamma"].mean(dim=["chain", "draw"]).values
 
 comparacion_esqueleto = pd.DataFrame({
-    "ols": resumen_ols_esqueleto.values,
+    "ols": resumen_ols_esqueleto["ols"].values,
     "posteriori": [mu_esqueleto, *gamma_esqueleto, sigma_esqueleto],
 }, index=resumen_ols_esqueleto.index)
 comparacion_esqueleto.round(2)
