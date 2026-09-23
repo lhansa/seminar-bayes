@@ -180,15 +180,9 @@ $$
 P(p \mid \text{datos}) = \frac{P(\text{datos} \mid p) \cdot P(p)}{P(\text{datos})}
 $$
 
-## Cada término tiene nombre
-
-| Término | Nombre |
-|---|---|
-| $P(p \mid \text{datos})$ | posteriori: lo que buscas |
-| $P(\text{datos} \mid p)$ | verosimilitud: tu modelo |
-| $P(p)$ | priori: lo que creías **antes** |
-| $P(\text{datos})$ | constante normalizadora |
-
+- $P(p \mid \text{datos})$, **posteriori**, lo que buscas.
+- $P(\text{datos} \mid p)$, **verosimilitud**, tu modelo.
+- $P(p)$, **priori**, lo que creías **antes.**
 ## Los métodos bayesianos requieren mucho cómputo
 
 Parte de tu trabajo será elegir qué librería te gusta más. 
