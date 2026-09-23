@@ -363,6 +363,24 @@ float(np.mean(p_cara_post > 0.5))
 Ese número es la probabilidad de que la probabilidad de obtener cara sea estrictamente mayor que 0,5 dada esta priori y esta verosimilitud.
 :::
 
+::: {.notes}
+«Dada esta priori» no es letra pequeña. Por si alguien pregunta qué pasa si la cambio, los
+números están medidos (#102), con prioris Beta que pesan lo mismo que los datos, como si
+viniera de ver otras cien tiradas:
+
+- Uniforme, la de la slide: 0,977.
+- Beta(60, 40), convencida de que la moneda da 0,6: 0,998. Casi nada que ganar: los datos ya
+  decían eso.
+- Beta(20, 80), absurda, convencida de que da 0,2: **0,002**. La conclusión se da la vuelta,
+  y la media de la posteriori se queda en 0,40, a medio camino entre el prejuicio y los datos.
+- Y si el prejuicio pesa diez veces más, Beta(200, 800): 0,000. Cien tiradas no pueden con mil
+  que nadie ha visto.
+
+La lección: la priori es una afirmación, y se defiende como cualquier otra. Si es absurda, el
+resultado también, por mucho MCMC que le eches encima. Cómo se pilla una priori absurda antes
+de ajustar —la simulación previa— llega en el esqueleto.
+:::
+
 ## Me costó años entender qué era un intervalo de confianza
 
 ```{python}
