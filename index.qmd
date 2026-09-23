@@ -536,9 +536,9 @@ ols_esqueleto = sm.OLS(y_esc, sm.add_constant(x_esc)).fit()
 #| echo: false
 
 resumen_ols_esqueleto = pd.DataFrame({
-    "ols": list(ols_esqueleto.params) + [ols_esqueleto.resid.std(ddof=3)],
-    "p-valor": list(ols_esqueleto.pvalues) + [np.nan],
-}, index=["intercept"] + CONTROLES + ["residuos"])
+    "ols": list(ols_esqueleto.params),
+    "p-valor": list(ols_esqueleto.pvalues),
+}, index=["intercept"] + CONTROLES)
 resumen_ols_esqueleto.round({"ols": 2, "p-valor": 3})
 ```
 
@@ -678,7 +678,7 @@ datos que ha visto. Se ve entera en el bloque de medios, donde además dice algo
 diría.
 :::
 
-## Mismos datos, mismos números: hasta aquí no has ganado nada
+## Mismos datos, mismos números
 
 ```{python}
 #| label: varianza-esqueleto
@@ -886,15 +886,18 @@ $$
 La priori se escribe en las unidades en las que la gente sabe pensar. Lo demás es despejar.
 :::
 
-## Una priori no es de un parámetro: es del modelo entero
+## Con la priori tienes que tener en cuenta todo el modelo
 
-::: {.incremental}
+- Esqueleto, `mu ~ Normal(0, 1)`.
 
-- En el esqueleto, `mu ~ Normal(0, 1)`, y era lo correcto: el nivel de un KPI estandarizado.
-- Aquí `mu` ya no es el nivel de los ingresos: es lo que queda **después** de restar los medios.
-- Así que vuelve a `Normal(0, 5)`. No por prudencia: porque tiene que poder irse a −3 para compensar lo que aportan.
+- Ahora, `mu ~ Normal(0, 5)`. 
+
+::: aside
+
+Aquí `mu` ya no es el nivel de los ingresos: es lo que queda **después** de restar los medios. Damos libertad a ese nivel de ingresos sin medios.
 
 :::
+
 
 ::: {.notes}
 Esta es la lección del bloque, no un detalle de implementación. Con la priori apretada del
@@ -1274,7 +1277,18 @@ negarlo.
 
 ## leonardohansa.com/regalo-bayes {#preguntas}
 
-![leonardohansa.com/regalo-bayes](img/qr.png){fig-align="center" width="240"}
+:::: {.columns}
+
+::: {.column width="40%"}
+![](img/cunef.png)
+:::
+
+::: {.column width="60%"}
+![leonardohansa.com/regalo-bayes](img/qr.png)
+:::
+
+::::
+
 
 ::: {.notes}
 Esta es la slide de los veinte minutos de preguntas, y por eso lleva el QR: va a estar
