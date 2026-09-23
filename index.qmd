@@ -422,7 +422,7 @@ CANALES = [f"Channel{i}" for i in range(5)]
 CONTROLES = ["competitor_sales_control", "sentiment_score_control"]
 ```
 
-## `{python} len(df)` semanas de un anunciante nacional, simuladas por Google Meridian
+## `{python} len(df)` semanas de inversión publicitaria
 
 ```{python}
 #| label: correlaciones-canales
@@ -432,13 +432,16 @@ correlaciones = df[[f"{c}_spend" for c in CANALES]].corr()
 correlaciones.index = correlaciones.columns = CANALES
 ```
 
-- Cinco medios publicatarios de pago, con impresiones e inversión.
-- Otra variables: ventas de la competencia y sentimiento de marca.
+- Inversión en cinco medios publicitarios.
+- Ventas de la competencia y sentimiento de marca.
 - Variable objetivo: ingresos (`revenue`).
-- Y los canales se mueven juntos: `Channel2`, `Channel3` y `Channel4` correlacionan entre sí por encima de `{python} f"{min(correlaciones.loc['Channel2', 'Channel3'], correlaciones.loc['Channel2', 'Channel4'], correlaciones.loc['Channel3', 'Channel4']):.2f}"`, y son `{python} len(df)` filas para separarlos.
 
 ::: aside
-Cinco canales, `{python} len(df)` semanas y la pregunta de la reunión: ¿cuál subo?
+
+Datos simulados de Google a partir de su experiencia en el sector. 
+
+Fuente: https://github.com/google/meridian
+
 :::
 
 ::: {.notes}
@@ -452,6 +455,12 @@ charla: la priori se mueve donde hay señal (el ROI) y se queda igual donde no l
 ## Lo que pregunta negocio es cuánto devuelve cada medio, su ROI
 
 La respuesta es una distribución.
+
+## Cuantificamos cómo las variables explicativas mueven el KPI a lo largo del tiempo
+
+<!-- TODO. Time series plot of revenue and one
+of the media channels. All scaled so that they 
+fit in the same axis. -->
 
 # El esqueleto: nivel y controles del KPI
 
@@ -488,6 +497,8 @@ resumen_ols_esqueleto = pd.Series(
 resumen_ols_esqueleto.round(2)
 ```
 
+<!-- Add p values to the resumen_ols_esqueleto -->
+
 ::: aside
 Mínimos cuadrados sobre el KPI y los controles, ya estandarizados.
 :::
@@ -499,11 +510,11 @@ Mínimos cuadrados sobre el KPI y los controles, ya estandarizados.
 #| echo: true
 with pm.Model(coords={"control": CONTROLES, "semana": semanas}) as esqueleto:
     mu = pm.Normal("mu", 0.0, 1.0)
-    gamma = pm.Normal("gamma", 0.0, 1.0, dims="control")
+    gamma = pm.Normal("gamma", 0.0, 1.0, dims=CONTROLES)
     sigma = pm.Exponential("sigma", 1.0)
 
     media = mu + pt.dot(x_esc, gamma)
-    pm.Normal("y", mu=media, sigma=sigma, observed=y_esc, dims="semana")
+    pm.Normal("y", mu=media, sigma=sigma, observed=y_esc, dims=semanas)
 ```
 
 ## Antes de usar datos, ¿las prioris tienen sentido?
@@ -575,11 +586,11 @@ Con profesores en la sala, nombrarlo cuesta una palabra y luego vale por medio a
 cuando llegue la pregunta de si esto no es subjetivo.
 :::
 
-## Ajuste y diagnóstico
+## Ajusto...
 
 ```{python}
 #| label: ajuste-esqueleto
-#| echo: false
+#| echo: true
 
 with esqueleto:
     idata_esqueleto = pm.sample(
@@ -587,6 +598,8 @@ with esqueleto:
         random_seed=SEMILLA, progressbar=False,
     )
 ```
+
+## ...y diagnostico
 
 ```{python}
 #| label: diagnostico-esqueleto
@@ -1140,10 +1153,9 @@ negarlo.
 
 ::: {.incremental}
 
-- La priori se escribe en las unidades en las que la gente sabe pensar, no en las que le vienen cómodas al modelo.
-- Se simula desde ella antes de mirar los datos: si el disparate sale ahí, es tuyo, no de los datos.
-- Se diagnostica antes de leer la posteriori. Un muestreador que no ha convergido no opina.
-- La respuesta es una distribución, no un asterisco.
+- Hay metodología detrás de la elección de una priori.
+- Se diagnostica antes de leer la posteriori.
+- La respuesta es una distribución.
 
 :::
 
