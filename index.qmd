@@ -694,8 +694,11 @@ hdi_competencia = hdi_esqueleto["gamma"].sel(control="competitor_sales_control")
 hdi_sentimiento = hdi_esqueleto["gamma"].sel(control="sentiment_score_control").values
 hdi_sigma_euros = hdi_esqueleto["sigma"].values
 
-gamma_sentimiento = idata_esqueleto.posterior["gamma"].sel(control="sentiment_score_control")
-p_sentimiento_sube = float((gamma_sentimiento > 0).mean())
+gamma_esqueleto = idata_esqueleto.posterior["gamma"]
+competencia_euros = gamma_esqueleto.sel(control="competitor_sales_control").values.ravel() * y_sd
+sentimiento_euros = gamma_esqueleto.sel(control="sentiment_score_control").values.ravel() * y_sd
+
+p_sentimiento_sube = float((sentimiento_euros > 0).mean())
 p_valor_sentimiento = resumen_ols_esqueleto.loc["sentiment_score_control", "p-valor"]
 
 
@@ -704,13 +707,33 @@ def euros(valor):
     return f"{round(valor, -3):,.0f}".replace(",", ".").replace("-", "−")
 ```
 
-- Si la competencia vende una desviación típica más, facturo entre `{python} euros(-hdi_competencia[1])` y `{python} euros(-hdi_competencia[0])` € menos a la semana.
-- Con el sentimiento hay un `{python} f"{100 * p_sentimiento_sube:.0f}"` % de probabilidad de que empuje hacia arriba, pero su efecto va de `{python} euros(hdi_sentimiento[0])` a `{python} euros(hdi_sentimiento[1])` €.
-- Los controles explican el `{python} f"{100 * varianza_explicada_esqueleto:.0f}"` % de la varianza: una semana cualquiera se aparta de lo previsto entre `{python} euros(hdi_sigma_euros[0])` y `{python} euros(hdi_sigma_euros[1])` €.
+:::: {.columns}
+
+::: {.column width="60%"}
+```{python}
+#| label: graf-posteriori-competencia
+
+fig, ax = plt.subplots(figsize=(6, 4.5))
+ax.hist(competencia_euros / 1e3, bins=40, density=True, edgecolor="white",
+        color="#BBBBBB", alpha=0.9)
+ax.axvspan(hdi_competencia[0] / 1e3, hdi_competencia[1] / 1e3, color=ACENTO, alpha=0.18)
+ax.set_xlabel("Efecto en la facturación semanal (k€)")
+ax.set_ylabel("Densidad")
+ax.set_title("Ventas de la competencia")
+plt.show()
+```
+:::
+
+::: {.column width="40%"}
+- Competencia: +1 desviación típica.
+- Yo: entre `{python} euros(hdi_competencia[0])` y `{python} euros(hdi_competencia[1])` € a la semana.
+- Con un 90 % de probabilidad.
+:::
+
+::::
 
 ::: aside
-Intervalos al 90 % de la posteriori. El efecto de cada control, por cada desviación típica
-que se mueve.
+Intervalo de credibilidad al 90 %, sombreado.
 :::
 
 ::: {.notes}
@@ -719,6 +742,51 @@ OLS con el que empezó el bloque, y si alguien lo comprueba, coinciden. Quien qu
 priori mandar que espere al bloque de medios, donde `mu` pasa de `Normal(0, 1)` a
 `Normal(0, 5)` porque el modelo es otro. Lo que cambia aquí no es el número, es la lectura:
 cada frase lleva su incertidumbre en euros, y se puede decir en una reunión sin traducir.
+
+Y decir en voz alta, porque no está en ninguna slide y el bloque de medios lo cobra: los dos
+controles explican el `{python} f"{100 * varianza_explicada_esqueleto:.0f}"` % de la varianza,
+y una semana cualquiera se aparta de lo previsto entre `{python} euros(hdi_sigma_euros[0])` y
+`{python} euros(hdi_sigma_euros[1])` €. Es poco, y está bien que lo sea: el muestreo es
+impecable y el modelo, flojo. Las dos cosas a la vez, que en medios vuelven.
+:::
+
+## El sentimiento probablemente suma, pero no sé cuánto
+
+:::: {.columns}
+
+::: {.column width="60%"}
+```{python}
+#| label: graf-posteriori-sentimiento
+
+sentimiento_k = sentimiento_euros / 1e3
+# barras de 10 k€ con un borde en el cero, para que ninguna quede a medias entre los colores
+bordes = np.arange(np.floor(sentimiento_k.min() / 10) * 10, sentimiento_k.max() + 10, 10)
+
+fig, ax = plt.subplots(figsize=(6, 4.5))
+_, bordes, barras = ax.hist(sentimiento_k, bins=bordes, density=True,
+                            edgecolor="white", color="#BBBBBB", alpha=0.9)
+for barra, borde in zip(barras, bordes[:-1]):
+    if borde >= 0:
+        barra.set_facecolor(ACENTO)
+ax.axvline(0, color="black", linestyle="--", linewidth=1.5)
+ax.set_xlabel("Efecto en la facturación semanal (k€)")
+ax.set_ylabel("Densidad")
+ax.set_title(f"P(suma) = {100 * p_sentimiento_sube:.0f} %")
+plt.show()
+```
+:::
+
+::: {.column width="40%"}
+- `{python} f"{100 * p_sentimiento_sube:.0f}"` % de que sume.
+- Entre `{python} euros(hdi_sentimiento[0])` y `{python} euros(hdi_sentimiento[1])` € a la semana.
+- El intervalo cruza el cero.
+:::
+
+::::
+
+::: {.notes}
+El número del título es el área morada, contada: el mismo gesto que el `P(p > 0,5)` de la
+moneda. Señalarlo con el dedo.
 
 El sentimiento es el que merece la pausa. En la tabla del OLS salía con un p-valor de
 `{python} f"{p_valor_sentimiento:.2f}".replace(".", ",")`: "no significativo", y ahí se
