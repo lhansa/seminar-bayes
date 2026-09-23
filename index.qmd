@@ -156,7 +156,7 @@ sirve" y ahí se va el resto del bloque.
 - Cómo se pone en práctica la estadística bayesiana.
 
 ::: aside
-Esto es una charla, no un curso cuatrimestral, así que dejaré **muchas** cosas fuera.
+Esto es una charla, no un curso de 6 créditos, así que dejaré **muchas** cosas fuera.
 :::
 
 ## A qué me dedico {.custom-title}
@@ -183,6 +183,7 @@ $$
 - $P(p \mid \text{datos})$, **posteriori**, lo que buscas.
 - $P(\text{datos} \mid p)$, **verosimilitud**, tu modelo.
 - $P(p)$, **priori**, lo que creías **antes.**
+
 ## Los métodos bayesianos requieren mucho cómputo
 
 Parte de tu trabajo será elegir qué librería te gusta más. 
@@ -192,16 +193,19 @@ Parte de tu trabajo será elegir qué librería te gusta más.
 ![https://www.pymc.io/welcome.html](img/PyMC_banner.svg)
 
 
-## En PyMC queda así: priori, verosimilitud y datos
+## En PyMC queda así
 
 ```{python}
 #| label: modelo-moneda
 #| echo: true
 
 with pm.Model() as modelo_moneda:
-    p_cara = pm.Uniform("p_cara", lower=0, upper=1)    # priori
-    y = pm.Binomial("y", n=100, p=p_cara, observed=60) # verosimilitud y datos
-
+    # priori:
+    p_cara = pm.Uniform("p_cara", lower=0, upper=1)    
+    # verosimilitud y datos
+    y = pm.Binomial("y", n=100, p=p_cara, observed=60) 
+    
+    # ejecución:
     idata_moneda = pm.sample(
         draws=2000, tune=2000, chains=4, random_seed=SEMILLA, progressbar=False
     )
@@ -272,6 +276,12 @@ dibuja_recorrido(ax, hasta=zoom, detalle=True)
 ax.legend(loc="lower right")
 plt.show()
 ```
+
+::: aside
+
+Esta no es la simulación del verdadero algoritmo.
+
+:::
 
 ::: {.notes}
 La regla, en cuatro frases: estás en un valor de $p$, propones otro cercano, miras cuántas
@@ -398,9 +408,13 @@ tan concreto.
 - El frecuentista calcula la probabilidad de **los datos**, o de otros más extremos.
 - El bayesiano calcula la probabilidad del **parámetro**.
 - El segundo responde a la pregunta que yo hice.
-- El precio: elegir la priori, y mucho más cómputo.
 
 :::
+
+## Las cosas malas
+
+- Elegir la priori. 
+- Mucho más cómputo (sí, se tarda).
 
 ## Esto ha sido la teoría. Vamos a la práctica
 
@@ -1012,7 +1026,10 @@ az.plot_ppc(idata_medios, num_pp_samples=100, colors=[ACENTO, "#7A7A7A", "black"
 plt.show()
 ```
 
+::: aside
 Con los cinco canales dentro, la varianza explicada pasa del `{python} f"{100 * varianza_explicada_esqueleto:.0f}"` % al `{python} f"{100 * (1 - sigma_medios ** 2):.0f}"` %.
+
+:::
 
 ::: {.notes}
 Diagnosticar son dos preguntas, no una: el muestreo puede ser impecable y el modelo, flojo.
@@ -1049,6 +1066,7 @@ eje.set_yticks(posiciones)
 eje.set_yticklabels(CANALES)
 eje.invert_yaxis()
 eje.set_xlabel("ROI: euros de ingreso incremental por euro invertido (HDI al 90 %)")
+eje.set_title("¿Cuál es el ROI de cada medio?")
 eje.legend()
 plt.show()
 ```
@@ -1068,7 +1086,7 @@ este, del `{python} f"{100 * (1 - sigma_medios ** 2):.0f}"` %. Lo que cambia no 
 explica: es qué se puede decir de lo que explica.
 :::
 
-## La frase, sin la palabra "posteriori" dentro
+## La respuesta, sin tecnicismos estadísticos
 
 ```{python}
 #| label: frase-roi
@@ -1160,17 +1178,18 @@ nada (*backup*: `saturacion`). Conceder eso y enseñar cómo se detecta es más 
 negarlo.
 :::
 
-# Cierre
+# Con qué quiero te que quedes
 
-## Lo que te llevas
+## Sobre la priori
 
-::: {.incremental}
+- Elige la priori con lo que conoces, no con lo que viene bien al modelo. Luego adaptas
+- Simula cómo sería la realidad si la priori fuera cierta, antes de que el modelo aprenda.
 
-- Hay metodología detrás de la elección de una priori.
-- Se diagnostica antes de leer la posteriori.
-- La respuesta es una distribución.
+## Sobre la posteriori
 
-:::
+- Diagnostica antes de leer la posteriori.
+- Obtendrás una distribución como resultado, no un número. La incertidumbre formará parte de tu respuesta directamente.
+
 
 ## Lo que no ha cabido
 
