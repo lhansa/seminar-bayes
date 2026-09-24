@@ -160,9 +160,9 @@ Esto es una charla, no un curso de 6 créditos, así que dejaré **muchas** cosa
 
 ## A qué me dedico {.custom-title}
 
-![](img/Ebiquity_Logo.png){.nostretch width="50%" fig-alt="Logotipo de Ebiquity"}
+![](img/Ebiquity_Logo.png){.nostretch width="50%" fig-alt="Logotipo de Ebiquity" fig-align="center"}
 
-![](img/cunef.png){.nostretch width="50%" fig-alt="Logotipo de CUNEF"}
+![](img/cunef.png){.nostretch width="50%" fig-alt="Logotipo de CUNEF" fig-align="center"}
 
 ## Por cierto, te he traído un regalo {.custom-title}
 
@@ -197,7 +197,7 @@ Parte de tu trabajo será elegir qué librería te gusta más.
 
 ## PyMC
 
-![https://www.pymc.io/welcome.html](img/PyMC_banner.svg){.nostretch width="50%" fig-alt="Logotipo de PyMC"}
+![https://www.pymc.io/welcome.html](img/PyMC_banner.svg){.nostretch width="75%" fig-alt="Logotipo de PyMC"}
 
 
 ## En PyMC queda así
@@ -226,7 +226,7 @@ with pm.Model() as modelo_moneda:
 
 p_cara_post = idata_moneda.posterior["p_cara"].values.flatten()
 
-fig, ax = plt.subplots(figsize=(9, 4))
+fig, ax = plt.subplots(figsize=(10, 5))
 # con más barras, el ruido de la simulación abre un hueco en la moda (#96)
 ax.hist(p_cara_post, bins=20, density=True, edgecolor="white", color="#666666", alpha=0.85)
 ax.axvline(0.5, color="black", linestyle="--", linewidth=1.5, label="p = 0,5 (justa)")
@@ -1021,7 +1021,7 @@ aprietas `mu`. Por eso la previa se mira parámetro a parámetro y no solo en el
 
 ```{python}
 #| label: modelo-medios
-#| echo: true
+#| echo: false
 
 coords_medios = {"semana": semanas, "control": CONTROLES, "canal": CANALES}
 
@@ -1035,6 +1035,27 @@ with pm.Model(coords=coords_medios) as medios:
     pesos = pesos_adstock(alpha)
     adstock = pt.sum(rezagos * pesos.T[None, :, :], axis=1)
 
+    beta = pm.Deterministic(
+        "beta", roi * gasto_total / (y_sd * pt.sum(adstock, axis=0)), dims="canal"
+    )
+    contribucion = pm.Deterministic("contribucion", roi * gasto_total, dims="canal")
+
+    media = mu + pt.dot(adstock, beta) + pt.dot(x_esc, gamma)
+    pm.Normal("y", mu=media, sigma=sigma, observed=y_esc, dims="semana")
+```
+
+```{python}
+#| label: modelo-medios-show
+#| echo: true
+#| eval: false
+# -> definiciones de objetos <-
+with pm.Model(coords=coords_medios) as medios:
+    alpha = pm.Uniform("alpha", 0.0, 1.0, dims="canal")
+    roi = pm.LogNormal("roi", mu=0.2, sigma=0.9, dims="canal")
+    # -> otras prioris conocidas aquí <-
+
+    # -> cálculo de adstocks aquí <-
+    
     beta = pm.Deterministic(
         "beta", roi * gasto_total / (y_sd * pt.sum(adstock, axis=0)), dims="canal"
     )
