@@ -10,7 +10,7 @@ Las slides se publican en GitHub Pages. El recorrido son tres bloques: la moneda
 
 `index.qmd`, las slides nuevas, renderiza ya el seminario entero: los tres bloques —la moneda, el esqueleto del KPI y el modelo de medios— y el cierre.
 
-Detrás del cierre hay una sección **`# Backup`**, fuera del recorrido, para los veinte minutos de preguntas: la priori plana en `logit(p)`, la comparación con y sin saturación de Hill, la respuesta a «¿por dónde empiezo?» y las series temporales del caso. Se salta a cualquiera de ellas con `G`, el identificador de la slide (`priori-plana`, `saturacion`, `el-lunes`, `series`) y Enter. El guion de las preguntas previstas está en la nota del ponente de la última slide.
+Detrás del cierre hay una sección **`# Backup`**, fuera del recorrido, para los veinte minutos de preguntas: la priori plana en `logit(p)`, la comparación con y sin saturación de Hill, el ajuste contra la serie real, la respuesta a «¿por dónde empiezo?» y las series temporales del caso. Se salta a cualquiera de ellas con `G`, el identificador de la slide (`priori-plana`, `saturacion`, `ajuste`, `el-lunes`, `series`) y Enter. El guion de las preguntas previstas está en la nota del ponente de la última slide.
 
 Aparte de las slides está `notebooks/radon.ipynb`: el recorrido del radón de Minnesota (agrupado → *unpooled* → jerárquico), narrativo y sin ejercicios. No es material de la charla: es el regalo de suscripción, y sobre él se graba el vídeo de los modelos jerárquicos.
 
