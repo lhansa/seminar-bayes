@@ -521,6 +521,13 @@ plt.show()
 
 ## Una primera regresión, sin publi
 
+$$y = \mu + \gamma_1\cdot x_1 + \gamma_2\cdot x_2 + \varepsilon$$
+
+- $y$: ingresos semanales, estandarizados.
+- $x_i$: competencia y sentimiento de marca, estandarizados.
+- $\mu$: nivel de ingresos semanales, en desviaciones típicas del KPI.
+- $\varepsilon ~ \mathcal{N}(0, \sigma)$
+
 ```{python}
 #| label: procesado-esqueleto
 #| echo: false
@@ -532,28 +539,6 @@ y_media, y_sd = y.mean(), y.std()
 y_esc = (y - y_media) / y_sd
 x_esc = (x - x.mean(axis=0)) / x.std(axis=0)
 ```
-
-```{python}
-#| label: ajuste-ols-esqueleto
-#| echo: true
-
-ols_esqueleto = sm.OLS(y_esc, sm.add_constant(x_esc)).fit()
-```
-
-```{python}
-#| label: tabla-ols-esqueleto
-#| echo: false
-
-resumen_ols_esqueleto = pd.DataFrame({
-    "ols": list(ols_esqueleto.params),
-    "p-valor": list(ols_esqueleto.pvalues),
-}, index=["intercept"] + CONTROLES)
-resumen_ols_esqueleto.round({"ols": 2, "p-valor": 3})
-```
-
-::: aside
-Mínimos cuadrados sobre el KPI y los controles, ya estandarizados.
-:::
 
 ## La regresión de antes, pero con PyMC
 
@@ -707,8 +692,6 @@ competencia_euros = gamma_esqueleto.sel(control="competitor_sales_control").valu
 sentimiento_euros = gamma_esqueleto.sel(control="sentiment_score_control").values.ravel() * y_sd
 
 p_sentimiento_sube = float((sentimiento_euros > 0).mean())
-p_valor_sentimiento = resumen_ols_esqueleto.loc["sentiment_score_control", "p-valor"]
-
 
 def euros(valor):
     """Redondea a miles y separa con punto: -164008.5 -> '−164.000'."""
@@ -730,6 +713,7 @@ ax.set_ylabel("Densidad")
 ax.set_title("Ventas de la competencia")
 plt.show()
 ```
+
 :::
 
 ::: {.column width="40%"}
@@ -776,6 +760,7 @@ ax.set_ylabel("Densidad")
 ax.set_title(f"P(suma) = {100 * p_sentimiento_sube:.0f} %")
 plt.show()
 ```
+
 :::
 
 ::: {.column width="40%"}
