@@ -160,9 +160,9 @@ Esto es una charla, no un curso de 6 créditos, así que dejaré **muchas** cosa
 
 ## A qué me dedico {.custom-title}
 
-![](img/Ebiquity_Logo.png){.nostretch width="50%" fig-alt="Logotipo de Ebiquity" fig-align="center"}
-
 ![](img/cunef.png){.nostretch width="50%" fig-alt="Logotipo de CUNEF" fig-align="center"}
+
+![](img/Ebiquity_Logo.png){.nostretch width="50%" fig-alt="Logotipo de Ebiquity" fig-align="center"}
 
 ## Por cierto, te he traído un regalo {.custom-title}
 
@@ -1329,7 +1329,7 @@ https://leonardohansa.com/seminar-bayes
 
 ## GitHub de PyMC con ejemplos
 
-![https://github.com/pymc-devs/pymc-examples](img/pymc-github.png){.nostretch width="60%"}
+![https://github.com/pymc-devs/pymc-examples](img/pymc-github.png){width="75%"}
 
 
 ## Notebook de regalo
@@ -1341,7 +1341,7 @@ https://leonardohansa.com/seminar-bayes
 :::
 
 ::: {.column width="50%"}
-![https://leonardohansa.com/regalo-bayes](img/qr.png){.nostretch width="50%"}
+![https://leonardohansa.com/regalo-bayes](img/qr.png){.nostretch width="75%"}
 :::
 
 ::::
