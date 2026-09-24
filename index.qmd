@@ -1,11 +1,10 @@
 ---
-title: "Estás calculando la probabilidad equivocada"
-subtitle: "Una introducción a la inferencia bayesiana usada en una empresa"
+title: "Prejuicios e incertidumbre"
+subtitle: "Una introducción a la inferencia bayesiana en una empresa"
 author:
   - name: "Leonardo Hansa"
     affiliations:
-      - name: "CUNEF Universidad"
-      - name: "Ebiquity"
+      - name: "CUNEF Universidad - Ebiquity"
 date: 9/28/2026
 date-format: "D/M/YYYY"
 lang: es
@@ -161,7 +160,9 @@ Esto es una charla, no un curso de 6 créditos, así que dejaré **muchas** cosa
 
 ## A qué me dedico {.custom-title}
 
-![](img/Ebiquity_Logo.png){width="50%" fig-alt="Logotipo de Ebiquity"}
+![](img/Ebiquity_Logo.png){.nostretch width="50%" fig-alt="Logotipo de Ebiquity"}
+
+![](img/cunef.png){.nostretch width="50%" fig-alt="Logotipo de CUNEF"}
 
 ## Por cierto, te he traído un regalo {.custom-title}
 
@@ -169,7 +170,7 @@ Pero te doy más detalles al final.
 
 # El lanzamiento de moneda, en bayesiano
 
-## Nota inicial: no digo que no hagas estadística frecuentista
+## Observación. No digo que no hagas estadística frecuentista
 
 - Resultados similares. 
 - Interpretación diferente.
@@ -182,7 +183,13 @@ $$
 
 - $P(p \mid \text{datos})$, **posteriori**, lo que buscas.
 - $P(\text{datos} \mid p)$, **verosimilitud**, tu modelo.
-- $P(p)$, **priori**, lo que creías **antes.**
+- $P(p)$, **priori**, lo que crees en un principio.
+
+::: aside
+
+Probabilidades en todos los elementos.
+
+:::
 
 ## Los métodos bayesianos requieren mucho cómputo
 
@@ -190,7 +197,7 @@ Parte de tu trabajo será elegir qué librería te gusta más.
 
 ## PyMC
 
-![https://www.pymc.io/welcome.html](img/PyMC_banner.svg)
+![https://www.pymc.io/welcome.html](img/PyMC_banner.svg){.nostretch width="50%" fig-alt="Logotipo de PyMC"}
 
 
 ## En PyMC queda así
@@ -489,14 +496,14 @@ charla: la priori se mueve donde hay señal (el ROI) y se queda igual donde no l
 
 La respuesta es una distribución.
 
-## Cuantificamos cómo las variables explicativas mueven el KPI a lo largo del tiempo
+## Cuantificamos el impacto a lo largo del tiempo
 
 ```{python}
 #| label: graf-serie-revenue-canal
 
 canal = "Channel0"
 
-fig, ejes = plt.subplots(2, 1, figsize=(10, 5), sharex=True,
+fig, ejes = plt.subplots(2, 1, figsize=(10, 4), sharex=True,
                          gridspec_kw={"height_ratios": [3, 2]})
 
 ejes[0].plot(df["time"], df["revenue"] / 1e6, color=ACENTO)
@@ -725,16 +732,10 @@ plt.show()
 :::
 
 ::: {.column width="40%"}
-- Competencia: +1 desviación típica.
-- Yo: entre `{python} euros(hdi_competencia[0])` y `{python} euros(hdi_competencia[1])` € a la semana.
-- Con un 90 % de probabilidad.
+Competencia: entre `{python} euros(hdi_competencia[0])` y `{python} euros(hdi_competencia[1])` € a la semana, con un 90 % de probabilidad.
 :::
 
 ::::
-
-::: aside
-Intervalo de credibilidad al 90 %, sombreado.
-:::
 
 ::: {.notes}
 Con prioris flojas y `{python} len(df)` filas, la priori no manda: los centros son los del
@@ -750,7 +751,7 @@ y una semana cualquiera se aparta de lo previsto entre `{python} euros(hdi_sigma
 impecable y el modelo, flojo. Las dos cosas a la vez, que en medios vuelven.
 :::
 
-## El sentimiento probablemente suma, pero no sé cuánto
+## Con el sentimiento de marca tenemos muchas dudas
 
 :::: {.columns}
 
@@ -803,7 +804,7 @@ cuadrados falle aquí. Me paso porque el modelo del bloque siguiente —adstock,
 sobre el ROI, `beta` deducida— no se puede escribir con mínimos cuadrados.
 :::
 
-## Ahora metemos los medios (que es para lo que nos pagan).
+## Ahora metemos los medios (que es para lo que nos pagan)
 
 # El modelo de medios: ¿qué prioris necesitamos?
 
@@ -834,7 +835,7 @@ def pesos_adstock(alpha, max_lag=MAX_LAG):
     return pesos / pesos.sum(axis=1, keepdims=True)
 ```
 
-## El efecto de un anuncio no se acaba la semana en que se emite
+## El impacto de un anuncio no se acaba la semana en que se emite
 
 ```{python}
 #| label: graf-adstock
@@ -849,12 +850,17 @@ for alpha_, color in zip([0.1, 0.4, 0.7, 0.9], GRISES[:3] + [ACENTO]):
              label=f"α = {alpha_} (vida media {vida_media:.1f} sem.)")
 eje.set_xlabel("Semanas desde la impresión")
 eje.set_ylabel("Peso")
+eje.set_title("Efecto Ad-stock")
 eje.legend(fontsize=11)
 
 plt.show()
 ```
 
+::: aside
+
 Priori: `alpha ~ Uniform(0, 1)`: ni idea de cuánto dura.
+
+:::
 
 ::: {.notes}
 El adstock arregla uno de los dos supuestos falsos de una regresión sobre la inversión sin
@@ -887,7 +893,7 @@ natural de quien ha leído el código.
 
 - Variable independiente transformada. 
 - KPI estandarizado.
-- `beta`: desviaciones típicas de ingreso por unidad de inversión rezagada y dividida entre su mediana.
+<!-- - `beta`: desviaciones típicas de ingreso por unidad de inversión rezagada y dividida entre su mediana. -->
 
 ::: aside
 
@@ -963,8 +969,7 @@ final del bloque, con el gráfico de priori contra posteriori delante; no adelan
 
 ## `beta` deja de ser un parámetro: es una cuenta
 
-El ingreso incremental de un canal es lo que se pierde si lo apagas, y por construcción
-vale su ROI por lo invertido:
+
 
 $$
 \beta_m \cdot sd(y) \cdot \sum_t \tilde{x}_{tm} = \text{roi}_m \cdot \text{gasto}_m
@@ -976,6 +981,13 @@ $$
 
 ::: aside
 La priori se escribe en las unidades en las que la gente sabe pensar. Lo demás es despejar.
+:::
+
+::: {.notes}
+
+El ingreso incremental de un canal es lo que se pierde si lo apagas, y por construcción
+vale su ROI por lo invertido:
+
 :::
 
 ## Con la priori tienes que tener en cuenta todo el modelo
@@ -1128,7 +1140,7 @@ desviaciones típicas del centro de la priori que era correcta en el esqueleto. 
 priori no era mala, era mala **para este otro modelo**.
 :::
 
-## El muestreador va fino; el modelo sigue explicando poco
+## El muestreo bien; el modelo deja que desear
 
 ```{python}
 #| label: graf-ppc-medios
@@ -1302,53 +1314,35 @@ negarlo.
 - Obtendrás una distribución como resultado, no un número. La incertidumbre formará parte de tu respuesta directamente.
 
 
-# Ahora tú
+# Por dónde seguir
 
-## Por dónde seguir (1)
+## Estas diapositivas
 
-:::: {.columns}
+https://leonardohansa.com/seminar-bayes
 
-::: {.column width="50%"}
-- Estas diapositivas.
-:::
+## GitHub de PyMC con ejemplos
 
-::: {.column width="50%"}
-![https://leonardohansa.com/seminar-bayes](img/diapositivas.png)
-:::
+![https://github.com/pymc-devs/pymc-examples](img/pymc-github.png){.nostretch width="60%"}
 
-::::
 
-## Por dónde seguir (2)
+## Notebook de regalo
 
 :::: {.columns}
 
 ::: {.column width="50%"}
-- Github de PyMC con ejemplos.
+![](img/notebook.png)
 :::
 
 ::: {.column width="50%"}
-![https://github.com/pymc-devs/pymc-examples](img/pymc-github.png)
+![https://leonardohansa.com/regalo-bayes](img/qr.png){.nostretch width="50%"}
 :::
 
 ::::
 
 
-## Por dónde seguir (3)
+# Dónde profundizar
 
-:::: {.columns}
-
-::: {.column width="50%"}
-![Notebook de regalo con material extra.](img/notebook.png)
-:::
-
-::: {.column width="50%"}
-![https://leonardohansa.com/regalo-bayes](img/qr.png)
-:::
-
-::::
-
-
-## Dónde profundizar
+## _Statistical Rethinking_, R. McElreath
 
 :::: {.columns}
 
@@ -1361,7 +1355,7 @@ negarlo.
 :::
 
 ::: {.column width="50%"}
-![Statistical Rethinking, de Richard McElreath](img/statistical-rethinking.png)
+![](img/statistical-rethinking.png){.nostretch width="60%"}
 :::
 
 ::::
@@ -1369,17 +1363,7 @@ negarlo.
 
 ## leonardohansa.com/regalo-bayes {#preguntas}
 
-:::: {.columns}
-
-::: {.column width="40%"}
-![](img/cunef.png)
-:::
-
-::: {.column width="60%"}
-![leonardohansa.com/regalo-bayes](img/qr.png)
-:::
-
-::::
+![leonardohansa.com/regalo-bayes](img/qr.png){.nostretch width="50%"}
 
 
 ::: {.notes}
