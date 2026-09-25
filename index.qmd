@@ -35,7 +35,6 @@ import matplotlib.pyplot as plt
 import pymc as pm
 import pytensor.tensor as pt
 import arviz as az
-import statsmodels.api as sm
 from scipy import stats
 
 from src.estilo import ACENTO, GRISES, aplicar_estilo
@@ -53,7 +52,7 @@ la pregunta en el aire y se pasa. Nada de definir inferencia, ni de adelantar qu
 habrá dos enfoques. En la siguiente slide se pide respuesta a mano alzada, se cuentan los
 síes y se sigue; no se abre debate, que se come el bloque. La moneda entera, hasta
 "Vamos a no dar la vuelta al problema", no puede pasar de ocho minutos: lo que se gaste ahí
-se lo quita al bloque de medios. "Quién soy" es un minuto: de dónde vengo y por qué doy este
+se lo quita al bloque de medios. "A qué me dedico" es un minuto: de dónde vengo y por qué doy este
 seminario. No es un currículum, pero sí es la parte de empresa: es la credencial que esta
 sala ha venido a comprar.
 :::
@@ -106,18 +105,21 @@ for barra, borde in zip(barras, bordes[:-1]):
 ax.axvline(caras_obs, color=ACENTO, linewidth=2)
 ax.set_xlabel("Número de caras")
 ax.set_ylabel("Frecuencia")
-ax.set_title(f"p-valor simulado ≈ {p_valor_sim:.3f}")
+ax.set_title(f"p-valor simulado ≈ {p_valor_sim:.3f}".replace(".", ","))
 plt.show()
 ```
 
 ::: aside
-Ese número es el aproximadamente el p-valor del contraste.
+Ese número es, aproximadamente, el p-valor del contraste.
 :::
 
 ::: {.notes}
 El nombre se dice de palabra y no se proyecta: esto es el contraste de toda la vida, $H_0:
-\theta = 0{,}5$ frente a $H_1: \theta > 0{,}5$, y esta sala se lo sabe de memoria. Escribirlo
+p = 0{,}5$ frente a $H_1: p > 0{,}5$, y esta sala se lo sabe de memoria. Escribirlo
 sería la parte de la charla que menos les enseña.
+
+Y avisar una vez, de palabra: la $p$ de la moneda es la probabilidad de cara, y el p-valor es
+otra cosa. Mismo nombre, mala suerte, y a partir de aquí van a convivir en las mismas slides.
 
 Pero decirlo no es opcional, y el sitio es este: si dentro de dos slides no ha quedado dicho
 que lo que acabamos de simular es el contraste de siempre, el giro de "He dado la vuelta al
@@ -130,13 +132,13 @@ Si alguien pregunta: sí, hay fórmulas para calcularlo sin simular, y no nos im
 
 ## He dado la vuelta al problema
 
-- La pregunta era sobre **la moneda**, la distribución de $p$.
+- La pregunta era sobre **la moneda**: ¿es $p > 0{,}5$?
 - La respuesta es sobre **los datos**, su distribución dado $p = 0{,}5$.
 
 ::: {.notes}
 Este es el giro del bloque. En la slide anterior, callarse: la pregunta es retórica, pero
-el silencio la hace funcionar. Los tres puntos van de uno en uno y el que importa es el
-tercero: hemos calculado la probabilidad de unos datos que no hemos visto —60 caras o
+el silencio la hace funcionar. Los dos puntos se leen despacio y el que importa es el
+segundo: hemos calculado la probabilidad de unos datos que no hemos visto —60 caras o
 más, en repeticiones del experimento que no han ocurrido— y encima suponiendo cierto lo
 contrario de lo que queríamos demostrar. Es el truco de Juan Tamariz, dar la vuelta a la
 situación sin que se note.
@@ -235,7 +237,7 @@ fig, ax = plt.subplots(figsize=(10, 5))
 # con más barras, el ruido de la simulación abre un hueco en la moda (#96)
 ax.hist(p_cara_post, bins=20, density=True, edgecolor="white", color="#666666", alpha=0.85)
 ax.axvline(0.5, color="black", linestyle="--", linewidth=1.5, label="p = 0,5 (justa)")
-ax.axvline(0.6, color=ACENTO, linewidth=2, label="p observado = 0,60")
+ax.axvline(0.6, color=ACENTO, linewidth=2, label="proporción observada = 0,60")
 ax.set_xlabel("p (probabilidad de cara)")
 ax.set_ylabel("Densidad")
 ax.legend()
@@ -278,7 +280,7 @@ def dibuja_recorrido(ax, hasta=n_pasos, detalle=False):
         ax.plot(cadena[:hasta], color=GRISES[1], linewidth=1.1, marker="o", markersize=2.5)
     else:
         ax.plot(cadena[:hasta], color=GRISES[2], linewidth=0.5)
-    ax.axhline(0.6, color=ACENTO, linewidth=2, label="p observado = 0,60")
+    ax.axhline(0.6, color=ACENTO, linewidth=2, label="proporción observada = 0,60")
     ax.set_xlabel("Paso")
     ax.set_ylabel("p (probabilidad de cara)")
     ax.set_ylim(0, 0.8)
@@ -306,8 +308,9 @@ distingue ninguno. Señalar los tramos planos: son los rechazos, los pasos en lo
 cadena propone un valor peor y se queda donde estaba. Un tercio de las veces, más o menos.
 
 El arranque en 0,10 es a propósito: la cadena no sabe nada cuando empieza, y los primeros
-pasos son subida, no muestreo. Eso es el `tune=2000` de la slide del modelo, que PyMC usa
-para colocarse y luego tira; es la zona sombreada.
+pasos son subida, no muestreo. Eso es, en parte, el `tune=2000` de la slide del modelo: PyMC
+usa esos pasos para colocarse y para afinar el tamaño del paso, y luego los tira. La zona
+sombreada es la parte de colocarse.
 
 Y la línea de honestidad, que hay que decirla: PyMC no hace exactamente esto, hace NUTS, que
 propone usando el gradiente y es mucho más listo. La idea de fondo es la misma. Y de paso,
@@ -346,15 +349,17 @@ aunque aquí ya no lleve leyenda, y al lado está el montón que deja el resto.
 
 Y aquí está el truco, que es el título: como el paso se acepta según la plausibilidad
 relativa, la cadena acaba pasando en cada zona un tiempo proporcional a lo plausible que es
-esa zona. El recuento de visitas no se parece a la posteriori: es la posteriori. Y no se ha
-resuelto ninguna integral por el camino.
+esa zona. El recuento de visitas no es un dibujo parecido a la posteriori: es una muestra de
+ella. Y no se ha resuelto ninguna integral por el camino.
 
 Si conviene, volver un segundo a la slide del histograma de PyMC: es el mismo dibujo.
 
-De ahí el aside. Para decidir si me muevo solo comparo dos valores de $p$, y en esa
-comparación la constante normalizadora —la misma $P(\text{datos})$ de la tabla de hace un
-rato— aparece arriba y abajo y se va. Eso es justo lo que hace posible el muestreo: esa
-integral es la que no sabemos calcular en cuanto el modelo tiene más de dos parámetros.
+Y por qué funciona sin conocer la constante: para decidir si me muevo solo comparo dos
+valores de $p$, y en esa comparación la constante normalizadora —el $P(\text{datos})$ del
+denominador de Bayes, unas slides atrás— aparece arriba y abajo y se va. Eso es justo lo que
+hace posible el muestreo: esa integral deja de poder calcularse en cuanto el modelo tiene
+más de un puñado de parámetros. Con una rejilla de cien puntos por parámetro, los catorce del
+modelo de medios serían $10^{28}$ puntos.
 
 Referencia y parar: McElreath, *Statistical Rethinking* —el capítulo del rey Markov— y sus
 clases en YouTube, que están enteras y gratis. Nada de balance detallado ni de ergodicidad,
@@ -406,20 +411,26 @@ ax.axvspan(hdi[0], hdi[1], color=ACENTO, alpha=0.18)
 ax.axvline(0.5, color="black", linestyle="--", linewidth=1.5, label="p = 0,5")
 ax.set_xlabel("p (probabilidad de cara)")
 ax.set_ylabel("Densidad")
-ax.set_title(f"Intervalo de credibilidad 95%: [{hdi[0]:.3f}, {hdi[1]:.3f}]")
+hdi_texto = [f"{extremo:.3f}".replace(".", ",") for extremo in hdi]
+ax.set_title(f"Intervalo de credibilidad 95%: [{hdi_texto[0]}, {hdi_texto[1]}]")
 ax.legend()
 plt.show()
 ```
 
 ::: {.notes}
-Las cifras, por si alguien las saca en el móvil: el intervalo de credibilidad de esta
-slide es [0,503, 0,692]. El IC de Wilson al 95 % del mismo dato es [0,502, 0,691].
-Coinciden en el tercer decimal. Y el p-valor exacto de una cola de la slide de la moneda,
-0,0284, casi coincide con el complementario de la probabilidad de sesgo de dos slides
-atrás, 1 − 0,977 = 0,0230.
+Las cifras, por si alguien las saca en el móvil: el intervalo de credibilidad exacto es
+[0,503, 0,692]; el del título sale del muestreo y puede bailar en la tercera cifra. El IC de
+Wilson al 95 % del mismo dato es [0,502, 0,691]. Difieren en una milésima. Y el p-valor exacto de una cola de la slide de la moneda, 0,0284,
+se parece al complementario de la probabilidad de sesgo de dos slides atrás,
+1 − 0,977 = 0,0230, pero no es el mismo número.
 
-No es casualidad: con hipótesis de una cola y priori plana hay una correspondencia exacta
-entre los dos marcos. Y no hay truco ni comparación tramposa: el número es el mismo.
+No es casualidad, y aquí hay un regalo para quien sepa del tema: la correspondencia exacta
+existe, pero con el *mid-p-value*, no con el p-valor de siempre. Con priori uniforme y
+$p_0 = 0{,}5$, $P(p < 0{,}5 \mid \text{datos}) = P(X > 60) + \tfrac{1}{2} P(X = 60) = 0{,}0230$,
+clavado hasta el decimal quince. El porqué cabe en una frase: la posteriori es una
+Beta(61, 41), y la probabilidad de que quede por debajo de 0,5 es la de sacar 61 caras o más
+en 101 tiradas de una moneda justa, las cien de verdad más una de propina. El p-valor de
+siempre cuenta el 60 entero; la posteriori, medio. De ahí 0,0284 contra 0,0230.
 
 Lo que cambia no es el número, es la frase que puedes decir sobre él. "Hay un 95 % de
 probabilidad de que $p$ esté en este intervalo" frente a "si repitiera el experimento
@@ -427,9 +438,10 @@ muchas veces, el 95 % de esos intervalos contendría el $p$ verdadero". La prime
 que vas a querer decir cuando te toque defender un número en una reunión.
 
 No generalizar en voz alta: la coincidencia depende de la hipótesis de una cola y de la
-priori plana. Con hipótesis nula puntual ($p = 0{,}5$ en vez de $p \leq 0{,}5$) se rompe,
-y bastante —ahí está la paradoja de Lindley, que no hace falta nombrar si nadie pregunta
-tan concreto.
+priori plana. Si el bayesiano contrasta una nula puntual —pone una masa de probabilidad justo
+en $p = 0{,}5$ y la compara con el resto—, se rompe, y bastante: ahí está la paradoja de
+Lindley, que no hace falta nombrar si nadie pregunta tan concreto. El p-valor, en cambio, no
+se entera: da lo mismo con $H_0: p = 0{,}5$ que con $H_0: p \leq 0{,}5$.
 :::
 
 ## Resumen del bloque
@@ -445,7 +457,7 @@ tan concreto.
 ## Las cosas malas
 
 - Elegir la priori. 
-- Mucho más cómputo (sí, se tarda).
+- Más cómputo: segundos o minutos donde mínimos cuadrados tarda milisegundos.
 
 ## Esto ha sido la teoría. Vamos a la práctica
 
@@ -468,14 +480,6 @@ CONTROLES = ["competitor_sales_control", "sentiment_score_control"]
 ```
 
 ## `{python} len(df)` semanas de inversión publicitaria
-
-```{python}
-#| label: correlaciones-canales
-#| include: false
-
-correlaciones = df[[f"{c}_spend" for c in CANALES]].corr()
-correlaciones.index = correlaciones.columns = CANALES
-```
 
 - Inversión en cinco medios publicitarios.
 - Ventas de la competencia y sentimiento de marca.
@@ -531,7 +535,7 @@ $$y = \mu + \gamma_1\cdot x_1 + \gamma_2\cdot x_2 + \varepsilon$$
 - $y$: ingresos semanales, estandarizados.
 - $x_i$: competencia y sentimiento de marca, estandarizados.
 - $\mu$: nivel de ingresos semanales, en desviaciones típicas del KPI.
-- $\varepsilon ~ \mathcal{N}(0, \sigma)$
+- $\varepsilon \sim \mathcal{N}(0, \sigma)$
 
 ```{python}
 #| label: procesado-esqueleto
@@ -617,15 +621,23 @@ plt.show()
 A la derecha, el `{python} f"{pct_negativas_meridian:.1f}"` % de las semanas simuladas factura negativo.
 
 ::: {.notes}
-Las prioris de Meridian no son un error: su modelo es jerárquico por regiones, con miles de
-observaciones repartidas por geografías, y ahí los datos las tapan. Aquí hay 156 semanas y una
-sola serie: no las tapan, y una empresa vendiendo menos que nada varias semanas al año es lo
-que el modelo se cree antes de mirar un solo dato.
+Las prioris de Meridian no son un error: están pensadas para su modelo, jerárquico por
+regiones, no para este. Y cuidado con lo que se dice: aquí los datos también las tapan.
+Ajustado el esqueleto con ellas, la posteriori sale igual (`gamma` −0,417 frente a −0,415 y
+0,099 frente a 0,099; `sigma` 0,937 frente a 0,933): con 156 semanas y tres parámetros, a
+unas prioris tan anchas se las come el dato. El problema no es el resultado, es el
+principio: un modelo que, antes de mirar un solo dato, se cree que la empresa vende menos
+que nada varias semanas al año está mal escrito, aunque aquí los datos lo arreglen. En el
+modelo de medios, donde los datos dicen menos, la priori sí mueve el resultado, y se verá
+con `mu`.
 
-Y decirlo una vez con su nombre: esto que está proyectado es un **análisis de sensibilidad a
-la priori**. Dos juegos de prioris sobre los mismos datos, y uno de ellos factura en negativo.
-Con profesores en la sala, nombrarlo cuesta una palabra y luego vale por medio argumento
-cuando llegue la pregunta de si esto no es subjetivo.
+Y decirlo una vez con su nombre: esto que está proyectado es una **comparación de
+predictivas previas**. No usa datos: el histograma morado está solo de referencia. No es un
+análisis de sensibilidad a la priori, que sería ajustar con las dos y comparar las
+posterioris; hecho, es el párrafo de arriba, y dice que el esqueleto no es sensible a la
+priori. Con profesores en la sala, nombrar bien las dos cosas vale por medio argumento
+cuando llegue la pregunta de si esto no es subjetivo: la predictiva previa pilla la priori
+absurda antes de ajustar, y la sensibilidad mide cuánto ha importado.
 :::
 
 ## Ajusto...
@@ -662,7 +674,7 @@ plt.show()
 
 ::: aside
 
-- `r_hat` máximo `{python} f"{resumen_esqueleto['r_hat'].max():.2f}"`, 
+- `r_hat` máximo `{python} f"{resumen_esqueleto['r_hat'].max():.2f}".replace(".", ",")`,
 - `ess_bulk` mínimo `{python} int(resumen_esqueleto['ess_bulk'].min())`, 
 - divergencias `{python} divergencias_esqueleto`.
 
@@ -713,7 +725,7 @@ fig, ax = plt.subplots(figsize=(6, 4.5))
 ax.hist(competencia_euros / 1e3, bins=40, density=True, edgecolor="white",
         color="#BBBBBB", alpha=0.9)
 ax.axvspan(hdi_competencia[0] / 1e3, hdi_competencia[1] / 1e3, color=ACENTO, alpha=0.18)
-ax.set_xlabel("Efecto en la facturación semanal (k€)")
+ax.set_xlabel("Efecto en la facturación semanal (k€)\npor cada desviación típica de sus ventas")
 ax.set_ylabel("Densidad")
 ax.set_title("Ventas de la competencia")
 plt.show()
@@ -722,23 +734,31 @@ plt.show()
 :::
 
 ::: {.column width="40%"}
-Competencia: entre `{python} euros(hdi_competencia[0])` y `{python} euros(hdi_competencia[1])` € a la semana, con un 90 % de probabilidad.
+Competencia, por cada desviación típica que suben sus ventas: entre `{python} euros(hdi_competencia[0])` y `{python} euros(hdi_competencia[1])` € a la semana, con un 90 % de probabilidad.
 :::
 
 ::::
 
 ::: {.notes}
-Con prioris flojas y `{python} len(df)` filas, la priori no manda: los centros son los del
-OLS con el que empezó el bloque, y si alguien lo comprueba, coinciden. Quien quiera ver a la
-priori mandar que espere al bloque de medios, donde `mu` pasa de `Normal(0, 1)` a
-`Normal(0, 5)` porque el modelo es otro. Lo que cambia aquí no es el número, es la lectura:
-cada frase lleva su incertidumbre en euros, y se puede decir en una reunión sin traducir.
+Con prioris flojas y `{python} len(df)` filas, la priori no manda: los centros son los de
+mínimos cuadrados sobre la ecuación del principio del bloque (−0,42 y 0,10, en desviaciones
+típicas), y si alguien lo comprueba, coinciden. Quien quiera ver a la priori mandar que
+espere al bloque de medios, donde `mu` pasa de `Normal(0, 1)` a `Normal(0, 5)` porque el
+modelo es otro. Lo que cambia aquí no es el número, es la lectura: cada frase lleva su
+incertidumbre en euros, y se puede decir en una reunión sin traducir.
+
+La unidad, que es donde se tropieza: `gamma` por la desviación típica de los ingresos da
+euros semanales **por cada desviación típica que suben las ventas de la competencia**. No es
+«la competencia me quita tanto a la semana»: es cuánto cambia la facturación cuando la
+competencia vende una desviación típica más de lo normal.
 
 Y decir en voz alta, porque no está en ninguna slide y el bloque de medios lo cobra: los dos
 controles explican el `{python} f"{100 * varianza_explicada_esqueleto:.0f}"` % de la varianza,
-y una semana cualquiera se aparta de lo previsto entre `{python} euros(hdi_sigma_euros[0])` y
-`{python} euros(hdi_sigma_euros[1])` €. Es poco, y está bien que lo sea: el muestreo es
-impecable y el modelo, flojo. Las dos cosas a la vez, que en medios vuelven.
+y la desviación típica de lo que una semana se aparta de lo previsto está entre
+`{python} euros(hdi_sigma_euros[0])` y `{python} euros(hdi_sigma_euros[1])` €: una semana
+normal falla por esa cantidad, arriba o abajo, y alguna por el doble. Es poco lo explicado, y
+está bien que lo sea: el muestreo es impecable y el modelo, flojo. Las dos cosas a la vez,
+que en medios vuelven.
 :::
 
 ## Con el sentimiento de marca tenemos muchas dudas
@@ -760,7 +780,7 @@ for barra, borde in zip(barras, bordes[:-1]):
     if borde >= 0:
         barra.set_facecolor(ACENTO)
 ax.axvline(0, color="black", linestyle="--", linewidth=1.5)
-ax.set_xlabel("Efecto en la facturación semanal (k€)")
+ax.set_xlabel("Efecto en la facturación semanal (k€)\npor cada desviación típica del sentimiento")
 ax.set_ylabel("Densidad")
 ax.set_title(f"P(suma) = {100 * p_sentimiento_sube:.0f} %")
 plt.show()
@@ -770,7 +790,7 @@ plt.show()
 
 ::: {.column width="40%"}
 - `{python} f"{100 * p_sentimiento_sube:.0f}"` % de que sume.
-- Entre `{python} euros(hdi_sentimiento[0])` y `{python} euros(hdi_sentimiento[1])` € a la semana.
+- Entre `{python} euros(hdi_sentimiento[0])` y `{python} euros(hdi_sentimiento[1])` € a la semana, por cada desviación típica.
 - El intervalo cruza el cero.
 :::
 
@@ -780,15 +800,27 @@ plt.show()
 El número del título es el área morada, contada: el mismo gesto que el `P(p > 0,5)` de la
 moneda. Señalarlo con el dedo.
 
-El sentimiento es el que merece la pausa. En la tabla del OLS salía con un p-valor de
- "no significativo", y ahí se
-acaba la conversación. Aquí sale un `{python} f"{100 * p_sentimiento_sube:.0f}"` %.
-Cuidado con cómo se dice: no es que la bayesiana vea un efecto que el p-valor no ve. Son
-los mismos datos respondiendo a otra pregunta. El p-valor dice cómo de raros serían estos
-datos si el efecto fuera cero; la posteriori, qué me creo del efecto después de verlos. Es
-la vuelta al problema de la moneda, otra vez. Y el `{python} f"{100 * p_sentimiento_sube:.0f}"` %
-no autoriza a decir que el sentimiento funciona: el intervalo cruza el cero, y eso también
-va en la frase.
+El sentimiento es el que merece la pausa. Con mínimos cuadrados sobre la misma ecuación
+sale con un p-valor de 0,21, «no significativo», y ahí se acaba la conversación. Aquí sale
+un `{python} f"{100 * p_sentimiento_sube:.0f}"` %. Cuidado con cómo se dice: no es que la
+bayesiana vea un efecto que el p-valor no ve. Son los mismos datos respondiendo a otra
+pregunta. El p-valor dice cómo de raros serían estos datos si el efecto fuera cero; la
+posteriori, qué me creo del efecto después de verlos. Es la vuelta al problema de la moneda,
+otra vez. Y el `{python} f"{100 * p_sentimiento_sube:.0f}"` % no autoriza a decir que el
+sentimiento funciona: el intervalo cruza el cero, y eso también va en la frase.
+
+Y los números cuadran, que es lo bonito: ese 0,21 es a dos colas; a una cola es 0,11, y la
+probabilidad de que el efecto reste es 1 − 0,89 = 0,11. Con prioris flojas y un modelo
+normal, las dos cifras son casi la misma, como en la moneda. La bayesiana no ha encontrado
+nada que el p-valor no viera: lo dice en otro idioma.
+
+Ten preparada la pregunta de vuelta, porque en esta sala alguien la hace: ¿y en el modelo
+completo? Ahí el sentimiento cambia de signo. Con los medios dentro, la probabilidad de que
+sume cae a un 2 %, y la competencia pasa de −0,41 a −0,75 desviaciones típicas. Es el sesgo
+por variable omitida de toda la vida, que conocen de mínimos cuadrados: el esqueleto no tiene
+medios, y lo que hacen los medios se lo reparten los controles. Esta slide es un ejercicio de
+cómo se lee una posteriori, no una conclusión sobre el sentimiento. Y deja otra lección: la
+posteriori depende del modelo, no solo de la priori.
 
 Y la frase que sostiene el resto de la charla: no me paso a bayesiana porque mínimos
 cuadrados falle aquí. Me paso porque el modelo del bloque siguiente —adstock, la priori
@@ -837,8 +869,8 @@ lags = np.arange(MAX_LAG + 1)
 for alpha_, color in zip([0.1, 0.4, 0.7, 0.9], GRISES[:3] + [ACENTO]):
     pesos_ = pesos_adstock(np.array([alpha_]))[0]
     vida_media = np.log(0.5) / np.log(alpha_)
-    eje.plot(lags, pesos_, "o-", color=color,
-             label=f"α = {alpha_} (vida media {vida_media:.1f} sem.)")
+    cifras = f"α = {alpha_} (vida media {vida_media:.1f}".replace(".", ",")
+    eje.plot(lags, pesos_, "o-", color=color, label=f"{cifras} sem.)")
 eje.set_xlabel("Semanas desde la impresión")
 eje.set_ylabel("Peso")
 eje.set_title("Efecto Ad-stock")
@@ -865,14 +897,16 @@ La `Uniform(0, 1)` de `alpha` no es pereza: es la respuesta honesta. Y al final 
 hay que decir que la posteriori la devuelve casi tal cual: estos datos no distinguen un
 canal con memoria de una semana de otro con memoria de un mes.
 
-Y el porqué está justo en el aside: como los pesos suman uno, sumar el adstock de un canal a
-lo largo de la serie da prácticamente su inversión total, valga `alpha` 0,1 o 0,9 —solo
-cambian los primeros rezagos, donde la serie aún no ha empezado—. O sea que la contribución
-total del canal no depende de `alpha`: lo único que `alpha` mueve es el reparto en el tiempo,
-y eso es lo que habría que distinguir con 156 semanas ruidosas y tres canales que van juntos.
-No es que falten datos: es que la normalización deja a `alpha` casi sin señal por
-construcción. Y se queda así, porque es lo que hace limpia la cuenta de `beta` a partir del
-ROI.
+El porqué, por si lo preguntan: como los pesos suman uno, sumar el adstock de un canal a lo
+largo de la serie da prácticamente su inversión total, valga `alpha` 0,1 o 0,9. Se pierde
+entre un 0,1 % y un 2 %, el arrastre de las últimas semanas, que cae fuera de la serie. O sea
+que la contribución total del canal no depende de `alpha`: lo único que `alpha` mueve es el
+reparto en el tiempo. Y ese reparto sí se puede aprender, pero hace falta señal: con 156
+semanas, un modelo que explica un 30 % de la varianza y tres canales que van juntos
+(`Channel2`, `Channel3` y `Channel4` correlan entre 0,62 y 0,70), no la hay. Está medido: con
+los mismos gastos y un ruido cuatro veces menor, el mismo modelo recupera los `alpha` con los
+que se simularon los datos. Así que no es la normalización, es el ruido. La normalización se
+queda porque es lo que hace limpia la cuenta de `beta` a partir del ROI.
 
 Si preguntan qué asume antes del principio de la serie: `rezagos` rellena con ceros, así
 que las primeras ocho semanas dan por hecho que no hubo inversión antes del primer dato.
@@ -897,8 +931,9 @@ Esta slide es una pregunta a la sala y un silencio. No rellenarlo. Nadie tiene e
 intuición: yo tampoco, y llevo años con esto. Si alguien levanta la mano, preguntarle qué
 valor le parece razonable y dejar que se oiga en voz alta lo raro que suena.
 
-El tercer bullet se lee entero y despacio, que ahí está el chiste: esas son las unidades
-de verdad de `beta`, no una caricatura.
+Si alguien pide las unidades de `beta`, decirlas enteras y despacio, que ahí está el chiste:
+desviaciones típicas de ingreso por unidad de inversión rezagada y dividida entre su
+mediana. Son las de verdad, no una caricatura.
 
 Si preguntan por qué modelamos facturación y no conversiones —y en una sala de marketing
 lo preguntan—: el modelo es exactamente el mismo, lo que cambia es que para poner la
@@ -931,7 +966,8 @@ eje.plot(rejilla_roi, densidad_roi, color=GRISES[1], linewidth=2)
 eje.fill_between(rejilla_roi, densidad_roi, color=ACENTO, alpha=0.2,
                  where=(rejilla_roi >= roi_bajo) & (rejilla_roi <= roi_alto),
                  label="90 % central")
-eje.axvline(1.0, color="black", linestyle="--", linewidth=1.2, label="ROI = 1: ni gana ni pierde")
+eje.axvline(1.0, color="black", linestyle="--", linewidth=1.2,
+            label="ROI = 1: recupera en ventas lo invertido")
 eje.set_xlabel("ROI: euros de ingreso incremental por euro invertido")
 eje.set_ylabel("Densidad")
 eje.set_title("roi ~ LogNormal(0,2; 0,9)")
@@ -940,16 +976,23 @@ plt.show()
 ```
 
 ::: aside 
-Un `{python} f"{100 * priori_roi.cdf(1):.0f}"` % de probabilidad de estar perdiendo dinero.
+Un `{python} f"{100 * priori_roi.cdf(1):.0f}"` % de probabilidad de no recuperar en ventas lo invertido.
 :::
 
 ::: {.notes}
-Traducida a la reunión: "asumo que la publicidad devuelve algo más de lo que cuesta, pero
-admito casi cualquier cosa entre perder tres cuartas partes y quintuplicar, y me parece
-casi igual de probable perder que ganar". Es honesta para quien no tiene ni idea. También
+Traducida a la reunión: "asumo que la publicidad devuelve en ventas algo más de lo que
+cuesta, pero admito casi cualquier cosa entre recuperar solo una cuarta parte y
+quintuplicar, y me parece casi igual de probable no recuperarlo que recuperarlo". Es honesta
+para quien no tiene ni idea. También
 es enorme, y se le pone igual a los cinco canales, cuando uno se lleva siete veces más
 presupuesto que otro. Que Meridian la traiga por defecto no es una recomendación: es lo
 único que puede hacer una librería que no sabe de qué empresa le hablas.
+
+Una precisión que en una sala de empresa te van a hacer: este ROI es ingreso incremental
+entre inversión, lo que en marketing muchos llaman ROAS. ROI = 1 es recuperar en ventas lo
+invertido, no ganar dinero: para eso hay que pagar además lo vendido. Con un margen del
+30 %, el punto muerto en beneficio es un ROI de 3,3. Meridian lo llama ROI y aquí se mantiene
+el nombre, pero no se dice «perder dinero».
 
 Si la pregunta de la subjetividad cae aquí —y aquí es donde más papeletas tiene de caer
 antes de tiempo—, la versión corta y seguir: sí, esto es una elección, y está escrita. Las
@@ -975,10 +1018,17 @@ La priori se escribe en las unidades en las que la gente sabe pensar. Lo demás 
 :::
 
 ::: {.notes}
-
 El ingreso incremental de un canal es lo que se pierde si lo apagas, y por construcción
-vale su ROI por lo invertido:
+vale su ROI por lo invertido: esa es la primera ecuación. En el modelo, ese ingreso es `beta`
+por el adstock sumado en toda la serie, devuelto a euros con `sd(y)`. Se despeja `beta` y ya
+está: la segunda.
 
+Ojo con «lo que se pierde si lo apagas»: es una frase causal, y el modelo solo la sostiene
+si nadie decide el presupuesto mirando la demanda que espera. Si marketing sube la inversión
+justo antes de las semanas buenas, el modelo le atribuye al anuncio lo que era temporada, y
+el ROI sale inflado; y este modelo tiene un nivel constante, sin estacionalidad. Con datos
+simulados no pasa nada. En una empresa es la primera objeción seria, y la respuesta es la
+del final del bloque: un experimento.
 :::
 
 ## Con la priori tienes que tener en cuenta todo el modelo
@@ -996,16 +1046,22 @@ Aquí `mu` ya no es el nivel de los ingresos: es lo que queda **después** de re
 
 ::: {.notes}
 Esta es la lección del bloque, no un detalle de implementación. Con la priori apretada del
-esqueleto, `mu` no puede bajar el nivel base, el modelo se pelea con su propia priori y lo
-paga el muestreador semanas después, cuando ya nadie se acuerda de esta slide.
+esqueleto, `mu` no puede bajar el nivel base todo lo que necesita, y el modelo resuelve la
+pelea por donde menos se ve: bajando los ROI. El muestreador no se entera —cero
+divergencias, `r_hat` 1,00—, así que ningún diagnóstico avisa. Está medido: con
+`mu ~ Normal(0, 1)`, la mediana del ROI de `Channel0` pasa de 1,29 a 0,97 —cruza el 1—, la de
+`Channel3` de 0,96 a 0,72 y la de `Channel4` de 0,82 a 0,69. Mismos datos y misma priori del
+ROI: lo que ha cambiado es la priori de otro parámetro. Si cae la pregunta de la
+subjetividad, este es el ejemplo más honesto que hay.
 
 Y no hace falta esperar a la posteriori para saberlo: está en el panel de la derecha de la
-slide anterior. Esa contribución de medios, dividida entre las 156 semanas y la desviación
-típica del KPI, es el nivel que `mu` tiene que compensar. Con la priori del ROI, esa cuenta
-da una mediana de −3,8, y se sale del intervalo [−1, 1] el 99,8 % de las veces: tres sigmas
-de la priori del esqueleto, antes de ver un dato. La simulación previa **sí** detecta el
-problema. Lo que no lo detecta es mirar solo el histograma de `y`, que casi no se mueve si
-aprietas `mu`. Por eso la previa se mira parámetro a parámetro y no solo en el KPI.
+simulación previa, dos slides más allá. Esa contribución de medios, dividida entre las 156
+semanas y la desviación típica del KPI, es el nivel que `mu` tiene que compensar. Con la
+priori del ROI, esa cuenta da una mediana de −3,9, casi cuatro sigmas de la priori del
+esqueleto, y en el 70 % de las simulaciones pasa de tres, antes de ver un dato. La
+simulación previa **sí** detecta el problema. Lo que no lo detecta es mirar solo el
+histograma de `y`, que casi no se mueve si aprietas `mu`. Por eso la previa se mira
+parámetro a parámetro y no solo en el KPI.
 :::
 
 ## El modelo entero
@@ -1096,7 +1152,9 @@ antes de mirar los datos. Si no saben responderla, el número que te den será e
 el de los datos.
 
 Aquí el percentil 95 dice que le parece perfectamente normal que seis de cada diez euros
-facturados vengan de los anuncios. Si eso fuera verdad, no harían falta modelos. Cuando
+facturados vengan de los anuncios. Para comparar: la inversión de estos datos es el 17 % de
+la facturación, así que con un ROI de 1 los medios explicarían un 17 %; seis de cada diez
+exigirían un ROI medio de casi 4 en todos los canales a la vez. Cuando
 tengas al jefe delante, aprieta la sigma de la lognormal, no su centro: el problema es la
 cola.
 :::
@@ -1136,8 +1194,8 @@ plt.tight_layout()
 plt.show()
 ```
 
-- `r_hat` máximo `{python} f"{resumen_medios['r_hat'].max():.2f}"`, `ess_bulk` mínimo `{python} int(resumen_medios['ess_bulk'].min())`, divergencias `{python} divergencias_medios`.
-- `mu` se ha ido a `{python} f"{mu_medios_post:.1f}".replace(".", ",").replace("-", "−")` (recuerda el _priori_ `Normal(0, 5)`).
+- `r_hat` máximo `{python} f"{resumen_medios['r_hat'].max():.2f}".replace(".", ",")`, `ess_bulk` mínimo `{python} int(resumen_medios['ess_bulk'].min())`, divergencias `{python} divergencias_medios`.
+- `mu` se ha ido a `{python} f"{mu_medios_post:.1f}".replace(".", ",").replace("-", "−")` (recuerda la priori `Normal(0, 5)`).
 
 ::: {.notes}
 Aquí el ajuste ya no son tres segundos, es minuto y pico: catorce parámetros y un adstock
@@ -1170,12 +1228,18 @@ Con los cinco canales dentro, la varianza explicada pasa del `{python} f"{100 * 
 Diagnosticar son dos preguntas, no una: el muestreo puede ser impecable y el modelo, flojo.
 Las dos cosas son verdad a la vez, como en el esqueleto.
 
-Y donde falla la predictiva posterior no es donde se espera: clava el centro y se pasa por
-abajo, generando semanas de facturación muy por debajo de la peor semana real. Un error
-gaussiano no sabe que la facturación tiene un suelo.
+Y lo que dice la predictiva posterior es que la forma está bien: los cuantiles simulados
+caen casi encima de los observados —los percentiles 1 y 99 salen en −2,39 y 2,37
+desviaciones típicas en la simulación y en −2,32 y 2,26 en los datos—, y la peor y la mejor
+semana de verdad no son raras para el modelo. El error gaussiano no molesta: la facturación
+tiene un suelo en cero, pero está a catorce desviaciones típicas de la media y ninguna
+semana se acerca. Lo flojo no es la forma, es cuánto explica.
 
-Si preguntan si esto es un `R²`: no, es `1 − σ²`, el análogo bayesiano. Pero corre sobre el
-mismo KPI estandarizado en los dos modelos, así que el salto del
+Si preguntan si esto es un `R²`: casi. Es `1 − σ²` sobre el KPI estandarizado, la varianza
+que el modelo no explica restada de uno, y se parece más a un `R²` ajustado que al de la
+tabla de mínimos cuadrados. El «R² bayesiano» con nombre propio es otra cosa (Gelman y
+otros, 2019), que se calcula muestra a muestra. Pero corre sobre el mismo KPI estandarizado
+en los dos modelos, así que el salto del
 `{python} f"{100 * varianza_explicada_esqueleto:.0f}"` % del esqueleto al
 `{python} f"{100 * (1 - sigma_medios ** 2):.0f}"` % de aquí sí se puede leer en limpio: eso
 es lo que han aportado los medios. (Detalle sin importancia práctica si alguien lo pincha:
@@ -1207,18 +1271,10 @@ plt.show()
 ```
 
 ::: {.notes}
-Antes de que lo diga alguien desde la tercera fila: este intervalo no es más corto que el
-de una regresión sobre la inversión, sin más, por ser bayesiano. Es más corto por tres
-cosas distintas y solo una lo es. El adstock, que es estructura: reparte la inversión en el
-tiempo en vez de pegarla entera a la semana en que se pagó. La priori, que es
-regularización, y eso también lo hace un ridge. Y la interpretación, que es lo único que
-compro aquí: poder decir "con probabilidad del 90 %" sobre este intervalo y, dos slides más
-allá, enseñar cuánto de él lo he puesto yo. Eso segundo no lo hace ridge.
-
-Y que nadie se vaya creyendo que ha comprado precisión: el modelo sin medios explicaba
-alrededor del `{python} f"{100 * varianza_explicada_esqueleto:.0f}"` % de la varianza y
-este, del `{python} f"{100 * (1 - sigma_medios ** 2):.0f}"` %. Lo que cambia no es cuánto
-explica: es qué se puede decir de lo que explica.
+Cada barra es el HDI al 90 % del ROI de un canal, y el punto, su mediana. Las cinco cruzan
+el 1: con estos datos, de ningún canal se puede decir con un 90 % de probabilidad que
+recupere en ventas lo invertido, ni que no lo recupere. Eso no es un fracaso del modelo, es
+la respuesta, y es la que se lleva a la reunión.
 :::
 
 ## La respuesta, sin tecnicismos estadísticos
@@ -1227,22 +1283,27 @@ explica: es qué se puede decir de lo que explica.
 #| label: frase-roi
 #| include: false
 
-i_c2, i_c0 = CANALES.index("Channel2"), CANALES.index("Channel0")
-hdi_c2 = hdi_roi[i_c2]
-p_c2_mejor = float((roi_post[:, i_c2] > roi_post[:, i_c0]).mean())
+hdi_c2 = hdi_roi[CANALES.index("Channel2")]
 ```
 
 > `Channel2` devuelve entre `{python} f"{hdi_c2[0]:.1f}".replace(".", ",")` y `{python} f"{hdi_c2[1]:.1f}".replace(".", ",")` euros por cada euro invertido, con un 90 % de probabilidad.
 
-<!-- - Es el candidato a subir presupuesto, pero sin afirmarlo: la probabilidad de que le gane a `Channel0` es del `{python} f"{100 * p_c2_mejor:.0f}"` %, poco más que una moneda.
-- Eso es lo que no sabía decir una regresión sin más. -->
-
 ::: {.notes}
 Las dos cifras salen de `az.hdi`, no las he escrito yo. Y el intervalo es enorme: lo mismo
 describe un canal ruinoso que uno excelente. Decirlo, que es la gracia. Un experimento en
-ese canal daría más información que otro trimestre entero mirando el histórico.
+ese canal daría más información que otro trimestre entero mirando el histórico, y no solo
+por el tamaño del intervalo: es lo único que responde a la pregunta causal sin suponer que
+el presupuesto no se decide mirando la demanda.
 
-Cuidado con la conclusión fácil de señalar un canal y decir "este pierde dinero": esa frase
+Y decirlo antes de que lo vean en la slide siguiente: `Channel2` es el canal donde más pesa
+la priori. Es el de menos inversión —12 M€ en tres años, con cuatro semanas a cero— y su HDI
+al 90 % es tan ancho como el de la priori: los datos lo han movido hacia arriba, pero no lo
+han estrechado. En los otros cuatro, el HDI de la posteriori mide entre un 37 % y un 65 % del
+de la priori. Las cifras no las he escrito yo, pero buena parte del intervalo sí lo he
+puesto yo, y eso es justo lo que enseña la slide siguiente.
+
+Cuidado con la conclusión fácil de señalar un canal y decir "este no recupera lo que
+cuesta": esa frase
 depende de supuestos que estos datos no sostienen —la saturación, sin ir más lejos, la
 mueve veinte puntos—, y no es la que hay que llevarse a casa.
 
@@ -1283,11 +1344,17 @@ número lo has puesto tú y lo estás sacando con otro nombre. Lo mismo pasa con
 memoria de una semana de otro con memoria de un mes. Eso no es un fallo del muestreador, es
 información.
 
-Si preguntan por qué, no decir "son pocos datos": los pesos del adstock suman uno, así que la
-contribución total de un canal es la misma con cualquier `alpha` y lo único que `alpha` cambia
-es cómo se reparte en el tiempo. Es estructural, no de tamaño de muestra.
+Un matiz, por si lo saca alguien que sepa: lo que separa la posteriori de la priori es lo que
+han dicho los datos *a través del modelo*, y el resto de prioris también cuentan. El ejemplo
+es `mu`: con la priori del esqueleto, estos mismos histogramas se moverían sin que cambie
+un dato (nota de la slide de `mu`).
 
-**"¿Y esto no es subjetivo?"** De las nueve preguntas previstas, esta es la que cae seguro, y
+Si preguntan por qué los `alpha` no se mueven: `alpha` no toca la contribución total de un
+canal, solo cómo se reparte en el tiempo, y ese reparto se distingue mal con 156 semanas
+ruidosas y canales que se mueven juntos. No es estructural: con menos ruido, el mismo modelo
+recupera `alpha` (nota de la slide del adstock).
+
+**"¿Y esto no es subjetivo?"** De las once preguntas previstas, esta es la que cae seguro, y
 esta slide es el sitio donde contestarla. Cuatro apoyos y una concesión, y cabe en un minuto:
 
 Uno: las decisiones del frecuentista también son elecciones, solo que sin escribir. Qué
@@ -1302,22 +1369,24 @@ separa de la priori, han hablado los datos; donde se le parece, el número lo pu
 Tres: y lo decimos cuando la respuesta es incómoda. Los cinco `alpha` salen prácticamente
 como la priori, está en esta misma slide, y no se esconde: se llama información.
 
-Cuatro: y ya hemos hecho un análisis de sensibilidad delante de ellos, en el bloque del
-esqueleto, comparando nuestras prioris con las de Meridian. Solo hay que recordarlo con
-ese nombre.
+Cuatro: y la priori absurda se pilla antes de ajustar. Lo hemos visto delante de ellos, en el
+bloque del esqueleto: la predictiva previa de las prioris de Meridian factura en negativo sin
+haber mirado un dato. Y si piden el análisis de sensibilidad, está hecho: en el esqueleto no
+cambia nada; en medios, la priori de `mu` mueve el ROI.
 
 Y la concesión, que es lo que hace creíble lo demás: sí es una elección, y sí cambia el
-resultado cuando los datos son flojos. El ejemplo está medido: con saturación de Hill tres
-canales pasan de ROI mediano por debajo de 1 a por encima sin que los datos hayan dicho
-nada (*backup*: `saturacion`). Conceder eso y enseñar cómo se detecta es más fuerte que
-negarlo.
+resultado cuando los datos son flojos. Hay dos ejemplos medidos. Con la priori de `mu` del
+esqueleto, la mediana del ROI de `Channel0` baja de 1,29 a 0,97 con los mismos datos. Y con
+saturación de Hill tres canales pasan de ROI mediano por debajo de 1 a por encima sin que
+los datos hayan dicho nada (*backup*: `saturacion`). Conceder eso y enseñar cómo se detecta
+es más fuerte que negarlo.
 :::
 
-# Con qué quiero te que quedes
+# Con qué quiero que te quedes
 
 ## Sobre la priori
 
-- Elige la priori con lo que conoces, no con lo que viene bien al modelo. Luego adaptas
+- Elige la priori con lo que conoces, no con lo que viene bien al modelo. Luego la adaptas con la simulación previa, no con la posteriori.
 - Simula cómo sería la realidad si la priori fuera cierta, antes de que el modelo aprenda.
 
 ## Sobre la posteriori
@@ -1359,11 +1428,11 @@ https://leonardohansa.com/seminar-bayes
 :::: {.columns}
 
 ::: {.column width="50%"}
+- Web del libro: https://xcelab.net/rm/
 - Sesiones grabadas en YouTube.
-- Traducción online disponible:
-  + https://xcelab.net/rm/
-  + Notable la de Solomon Kurz.
-  + Disponible la de PyMC.
+- El código, traducido a otros lenguajes:
+  + R con brms y tidyverse, de Solomon Kurz.
+  + Python con PyMC.
 :::
 
 ::: {.column width="50%"}
@@ -1437,7 +1506,7 @@ Conviene probarlo una vez antes de empezar, con la sala todavía vacía.
 
 ## Una priori plana no es "no elegir" {#priori-plana}
 
-Una uniforme en $\theta$ deja de ser plana si miras $\log\frac{\theta}{1-\theta}$.
+Una uniforme en $p$ deja de ser plana si miras $\log\frac{p}{1-p}$.
 
 Elegir una priori plana también es elegir.
 
@@ -1466,8 +1535,10 @@ plt.show()
 ::: {.notes}
 Si preguntan por Jeffreys: para la binomial es `Beta(1/2, 1/2)`, y su gracia es que es
 invariante a la reparametrización, que es justo lo que la uniforme no es. Con 100 tiradas
-da lo mismo que la uniforme hasta la tercera cifra. El argumento no es cuál es la buena:
-es que las tres son elecciones y solo una de ellas se presenta como si no lo fuera.
+da casi lo mismo que la uniforme: $P(p > 0{,}5)$ sale 0,9775 contra 0,9770. El argumento no es
+cuál es la buena: la uniforme, la de Jeffreys y la plana en logit —la de Haldane,
+`Beta(0, 0)`, que ni siquiera es una distribución propia— son tres elecciones, y solo la
+primera se presenta como si no lo fuera.
 :::
 
 ## Con Hill el modelo explica menos {#saturacion}
@@ -1482,7 +1553,7 @@ es que las tres son elecciones y solo una de ellas se presenta como si no lo fue
 La posteriori de `ec` devuelve su priori. El orden de los canales por ROI no se mueve.
 
 ::: aside
-Medido en `scripts/comparar_hill.py`, sobre los mismos datos y el mismo muestreo.
+Medido en `scripts/comparar_hill.py`, sobre los mismos datos y con los mismos `draws`, `tune` y `chains`.
 :::
 
 ::: {.notes}
@@ -1492,10 +1563,11 @@ saben decir dónde satura cada canal. Y como no lo saben, el parámetro de más 
 incertidumbre: el HDI del ROI se ensancha un 60 % y el modelo explica menos.
 
 Y el remate, que es lo que hay que contar si hay profesores delante: con Hill, tres
-canales pasan de ROI mediano por debajo de 1 a por encima, y su probabilidad de perder
-dinero cae unos veinte puntos. Eso se mueve **sin que los datos hayan dicho nada**, porque
-quien lo mueve es un parámetro que no está identificado. Por eso la frase final de la
-charla se construye sobre los dos canales cuyo ROI aguanta las dos versiones.
+canales pasan de ROI mediano por debajo de 1 a por encima, y su probabilidad de no
+recuperar en ventas lo invertido cae unos veinte puntos. Eso se mueve **sin que los datos
+hayan dicho nada**, porque quien lo mueve es un parámetro que no está identificado. Por eso
+la frase final de la charla se construye sobre `Channel2`, cuyo ROI aguanta las dos
+versiones.
 :::
 
 ## La serie real cae dentro de la nube, pero la nube es ancha {#ajuste}
@@ -1526,8 +1598,10 @@ semanas que el modelo se cree posibles. Es la varianza explicada de la slide de
 medios dibujada en el tiempo: la semana real casi nunca se sale de la nube, pero la nube
 ocupa casi todo el rango de la serie. Acertar así no tiene mérito.
 
-Alguna línea gris baja de la peor semana real: el suelo que el error gaussiano no conoce,
-el mismo de la nota del `plot_ppc`.
+Alguna línea gris baja de la peor semana real, y alguna sube de la mejor: con cien series de
+156 semanas es lo esperable, no un fallo. Un tercio de las réplicas tiene su mínimo por
+debajo del mínimo real, y tres cuartas partes, su máximo por encima del máximo real. Nada
+raro, como dice la nota del `plot_ppc`.
 
 Y es ajuste dentro de muestra, no predicción. No hay semanas guardadas para validar porque
 la charla va de explicar el ROI, no de adivinar la semana que viene.
@@ -1554,8 +1628,9 @@ plt.show()
 
 ::: {.notes}
 La pinta de los datos, para quien pregunte por ellos: 156 semanas, ingresos arriba e
-inversión canal a canal abajo. Se ve que los canales suben y bajan a la vez, que es el
-bullet de la slide de datos con dibujo en vez de con un número.
+inversión canal a canal abajo. Se ve que los canales suben y bajan a la vez: `Channel2`,
+`Channel3` y `Channel4` correlan entre 0,62 y 0,70, y por eso al modelo le cuesta repartir el
+mérito entre ellos.
 :::
 
 ## El lunes por la mañana {#el-lunes}
