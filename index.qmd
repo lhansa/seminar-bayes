@@ -1633,7 +1633,7 @@ inversión canal a canal abajo. Se ve que los canales suben y bajan a la vez: `C
 mérito entre ellos.
 :::
 
-## El lunes por la mañana {#el-lunes}
+## Deberes {#el-lunes}
 
 - `pip install pymc arviz` y a correr en tu portátil: no hace falta nada más.
 - Empieza por un problema que ya tengas resuelto con una regresión, para tener con qué comparar.
