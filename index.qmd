@@ -776,7 +776,7 @@ El número del título es el área morada, contada: el mismo gesto que el `P(p >
 moneda. Señalarlo con el dedo.
 
 El sentimiento es el que merece la pausa. En la tabla del OLS salía con un p-valor de
-`{python} f"{p_valor_sentimiento:.2f}".replace(".", ",")`: "no significativo", y ahí se
+ "no significativo", y ahí se
 acaba la conversación. Aquí sale un `{python} f"{100 * p_sentimiento_sube:.0f}"` %.
 Cuidado con cómo se dice: no es que la bayesiana vea un efecto que el p-valor no ve. Son
 los mismos datos respondiendo a otra pregunta. El p-valor dice cómo de raros serían estos
