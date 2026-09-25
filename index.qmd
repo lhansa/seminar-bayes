@@ -158,6 +158,11 @@ sirve" y ahí se va el resto del bloque.
 Esto es una charla, no un curso de 6 créditos, así que dejaré **muchas** cosas fuera.
 :::
 
+## Objetivo de hoy
+
+- Estudiantes.
+- Profesores.
+
 ## A qué me dedico {.custom-title}
 
 ![](img/cunef.png){.nostretch width="50%" fig-alt="Logotipo de CUNEF" fig-align="center"}
