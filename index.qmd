@@ -179,9 +179,6 @@ Pero te doy más detalles al final.
 
 ## Observación. No digo que no hagas estadística frecuentista
 
-- Resultados similares. 
-- Interpretación diferente.
-
 ## El fundamento bayesiano
 
 $$
@@ -457,7 +454,7 @@ se entera: da lo mismo con $H_0: p = 0{,}5$ que con $H_0: p \leq 0{,}5$.
 ## Las cosas malas
 
 - Elegir la priori. 
-- Más cómputo: segundos o minutos donde mínimos cuadrados tarda milisegundos.
+- Más cómputo.
 
 ## Esto ha sido la teoría. Vamos a la práctica
 
@@ -483,7 +480,7 @@ CONTROLES = ["competitor_sales_control", "sentiment_score_control"]
 
 - Inversión en cinco medios publicitarios.
 - Ventas de la competencia y sentimiento de marca.
-- Variable objetivo: ingresos (`revenue`).
+- Variable objetivo: ingresos..
 
 ::: aside
 
@@ -505,6 +502,13 @@ charla: la priori se mueve donde hay señal (el ROI) y se queda igual donde no l
 ## Lo que pregunta negocio es cuánto devuelve cada medio, su ROI
 
 La respuesta es una distribución.
+
+::: aside
+
+Vamos a hacer el modelo solo a medias.
+
+:::
+
 
 ## Cuantificamos el impacto a lo largo del tiempo
 
@@ -689,7 +693,7 @@ datos que ha visto. Se ve entera en el bloque de medios, donde además dice algo
 diría.
 :::
 
-## Cada parámetro es una distribución, y se lee en euros
+## Cada parámetro es una distribución
 
 ```{python}
 #| label: interpretacion-esqueleto
@@ -734,7 +738,7 @@ plt.show()
 :::
 
 ::: {.column width="40%"}
-Competencia, por cada desviación típica que suben sus ventas: entre `{python} euros(hdi_competencia[0])` y `{python} euros(hdi_competencia[1])` € a la semana, con un 90 % de probabilidad.
+Subida de una desviación típica en ventas de competencia: entre `{python} euros(hdi_competencia[0])` y `{python} euros(hdi_competencia[1])` € a la semana, con un 90 % de probabilidad.
 :::
 
 ::::
@@ -789,9 +793,7 @@ plt.show()
 :::
 
 ::: {.column width="40%"}
-- `{python} f"{100 * p_sentimiento_sube:.0f}"` % de que sume.
-- Entre `{python} euros(hdi_sentimiento[0])` y `{python} euros(hdi_sentimiento[1])` € a la semana, por cada desviación típica.
-- El intervalo cruza el cero.
+Entre `{python} euros(hdi_sentimiento[0])` y `{python} euros(hdi_sentimiento[1])` € a la semana, por cada desviación típica del sentimiento,con un 90%.
 :::
 
 ::::
@@ -1386,13 +1388,15 @@ es más fuerte que negarlo.
 
 ## Sobre la priori
 
-- Elige la priori con lo que conoces, no con lo que viene bien al modelo. Luego la adaptas con la simulación previa, no con la posteriori.
+- Elige la priori con lo que conoces, no con lo que viene bien al modelo.
 - Simula cómo sería la realidad si la priori fuera cierta, antes de que el modelo aprenda.
+- Adapta la priori si procede.
 
 ## Sobre la posteriori
 
 - Diagnostica antes de leer la posteriori.
-- Obtendrás una distribución como resultado, no un número. La incertidumbre formará parte de tu respuesta directamente.
+- Obtendrás una distribución como resultado, no un número. 
+- La incertidumbre formará parte de tu respuesta de manera directa.
 
 
 # Por dónde seguir
