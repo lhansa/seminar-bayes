@@ -676,6 +676,7 @@ plt.tight_layout()
 plt.show()
 ```
 
+<!--
 ::: aside
 
 - `r_hat` máximo `{python} f"{resumen_esqueleto['r_hat'].max():.2f}".replace(".", ",")`,
@@ -683,6 +684,7 @@ plt.show()
 - divergencias `{python} divergencias_esqueleto`.
 
 :::
+-->
 
 ::: {.notes}
 Tres segundos en un portátil, y esto es la mitad de la respuesta a "¿necesito una máquina
@@ -793,7 +795,7 @@ plt.show()
 :::
 
 ::: {.column width="40%"}
-Entre `{python} euros(hdi_sentimiento[0])` y `{python} euros(hdi_sentimiento[1])` € a la semana, por cada desviación típica del sentimiento,con un 90%.
+Entre `{python} euros(hdi_sentimiento[0])` y `{python} euros(hdi_sentimiento[1])` € a la semana, por cada desviación típica del sentimiento, con un 90 %.
 :::
 
 ::::
@@ -1196,7 +1198,9 @@ plt.tight_layout()
 plt.show()
 ```
 
+<!--
 - `r_hat` máximo `{python} f"{resumen_medios['r_hat'].max():.2f}".replace(".", ",")`, `ess_bulk` mínimo `{python} int(resumen_medios['ess_bulk'].min())`, divergencias `{python} divergencias_medios`.
+-->
 - `mu` se ha ido a `{python} f"{mu_medios_post:.1f}".replace(".", ",").replace("-", "−")` (recuerda la priori `Normal(0, 5)`).
 
 ::: {.notes}
@@ -1207,7 +1211,7 @@ si hace falta máquina.
 El `target_accept` es 0,95 y no el 0,9 del esqueleto: con 0,9 este modelo deja tres
 divergencias. Está medido, no supuesto.
 
-Y el segundo punto es la slide de `mu` cobrada: la posteriori está a casi tres
+Y la línea de `mu` es la slide de `mu` cobrada: la posteriori está a casi tres
 desviaciones típicas del centro de la priori que era correcta en el esqueleto. Aquella
 priori no era mala, era mala **para este otro modelo**.
 :::
@@ -1246,6 +1250,47 @@ en los dos modelos, así que el salto del
 `{python} f"{100 * (1 - sigma_medios ** 2):.0f}"` % de aquí sí se puede leer en limpio: eso
 es lo que han aportado los medios. (Detalle sin importancia práctica si alguien lo pincha:
 es `1 − E[σ]²`, no `1 − E[σ²]`; la diferencia es de 0,25 puntos.)
+:::
+
+## La serie real cae dentro de la nube, pero la nube es ancha {#ajuste}
+
+```{python}
+#| label: graf-ajuste-medios
+
+y_pp = (
+    idata_medios.posterior_predictive["y"].values.reshape(-1, len(df)) * y_sd + y_media
+)
+rng_ajuste = np.random.default_rng(SEMILLA)
+muestras_ajuste = rng_ajuste.choice(len(y_pp), size=100, replace=False)
+
+fig, eje = plt.subplots(figsize=(10, 4.5))
+eje.plot(df["time"], y_pp[muestras_ajuste].T / 1e6, color=GRISES[2], alpha=0.08, lw=0.8)
+eje.plot(df["time"], df["revenue"] / 1e6, color=ACENTO, lw=2, label="observado")
+eje.plot(df["time"], y_pp.mean(axis=0) / 1e6, color="black", lw=1.5, linestyle="--",
+         label="media de la predictiva posterior")
+eje.plot([], [], color=GRISES[2], lw=0.8, label="predictiva posterior (100 muestras)")
+eje.set_ylabel("Ingresos (M€)")
+eje.legend(loc="upper left")
+
+fig.tight_layout()
+plt.show()
+```
+
+::: {.notes}
+Las líneas grises son la predictiva posterior con el ruido dentro: cada una son 156 semanas
+que el modelo se cree posibles. La negra discontinua es la media de todas las muestras de la
+predictiva posterior, semana a semana: lo que el modelo espera, sin ruido. La distancia entre
+la morada y la negra es lo que no explica. Es la varianza explicada de la slide de medios
+dibujada en el tiempo: la semana real casi nunca se sale de la nube, pero la nube
+ocupa casi todo el rango de la serie. Acertar así no tiene mérito.
+
+Alguna línea gris baja de la peor semana real, y alguna sube de la mejor: con cien series de
+156 semanas es lo esperable, no un fallo. Un tercio de las réplicas tiene su mínimo por
+debajo del mínimo real, y tres cuartas partes, su máximo por encima del máximo real. Nada
+raro, como dice la nota del `plot_ppc`.
+
+Y es ajuste dentro de muestra, no predicción. No hay semanas guardadas para validar porque
+la charla va de explicar el ROI, no de adivinar la semana que viene.
 :::
 
 ## La pregunta que le importa a alguien
@@ -1466,12 +1511,13 @@ Orden esperado de las preguntas, de más a menos probable:
    entera; no contestar con bibliografía.
 3. **"¿Y la saturación?"** Backup: `saturacion`. Está medido, no opinado.
 4. **"¿Cómo sé que la cadena ha convergido?"** Volver a la traza del esqueleto: traza que
-   parece ruido, `r_hat` por debajo de 1,01, cero divergencias.
+   parece ruido, `r_hat` por debajo de 1,01, cero divergencias. Las cifras están comentadas
+   en el `.qmd`: si no se han descomentado, se dicen de palabra.
 5. **"¿Cuánto tarda? ¿Necesito máquina?"** Tres segundos el esqueleto, minuto y pico el de
    medios, y las dos cifras salen de un portátil. Decirlo con esas palabras.
-6. **"¿Y qué tal ajusta a los datos?"** Backup: `ajuste`. La serie real contra cien
-   muestras de la predictiva posterior: la real cae dentro, pero la banda es ancha. Dentro de
-   muestra, no predicción.
+6. **"¿Y qué tal ajusta a los datos?"** Volver a `ajuste`, que ya está en la charla,
+   detrás del `plot_ppc`. La serie real contra cien muestras de la predictiva posterior y su
+   media: la real cae dentro, pero la banda es ancha. Dentro de muestra, no predicción.
 7. **"¿Y si mi KPI no es facturación?"** No hace falta backup: se vuelve a "¿Alguien
    tiene una intuición sobre `beta`?" y la respuesta está en la nota del ponente de esa
    slide. En una línea: el modelo es el mismo, pero para escribir la priori en euros hace
@@ -1496,7 +1542,6 @@ Estas slides no están en el recorrido: se salta a ellas. Con la presentación e
 
 - `priori-plana` — "¿y una priori no informativa?"
 - `saturacion` — "¿y la saturación?"
-- `ajuste` — "¿y qué tal ajusta?"
 - `el-lunes` — "¿por dónde empiezo?"
 - `series` — "¿qué pinta tienen los datos?"
 
@@ -1572,43 +1617,6 @@ recuperar en ventas lo invertido cae unos veinte puntos. Eso se mueve **sin que 
 hayan dicho nada**, porque quien lo mueve es un parámetro que no está identificado. Por eso
 la frase final de la charla se construye sobre `Channel2`, cuyo ROI aguanta las dos
 versiones.
-:::
-
-## La serie real cae dentro de la nube, pero la nube es ancha {#ajuste}
-
-```{python}
-#| label: graf-ajuste-medios
-
-y_pp = (
-    idata_medios.posterior_predictive["y"].values.reshape(-1, len(df)) * y_sd + y_media
-)
-rng_ajuste = np.random.default_rng(SEMILLA)
-muestras_ajuste = rng_ajuste.choice(len(y_pp), size=100, replace=False)
-
-fig, eje = plt.subplots(figsize=(10, 4.5))
-eje.plot(df["time"], y_pp[muestras_ajuste].T / 1e6, color=GRISES[2], alpha=0.08, lw=0.8)
-eje.plot(df["time"], df["revenue"] / 1e6, color=ACENTO, lw=2, label="observado")
-eje.plot([], [], color=GRISES[2], lw=0.8, label="predictiva posterior (100 muestras)")
-eje.set_ylabel("Ingresos (M€)")
-eje.legend(loc="upper left")
-
-fig.tight_layout()
-plt.show()
-```
-
-::: {.notes}
-Es la predictiva posterior con el ruido dentro, no la curva media: cada línea gris son 156
-semanas que el modelo se cree posibles. Es la varianza explicada de la slide de
-medios dibujada en el tiempo: la semana real casi nunca se sale de la nube, pero la nube
-ocupa casi todo el rango de la serie. Acertar así no tiene mérito.
-
-Alguna línea gris baja de la peor semana real, y alguna sube de la mejor: con cien series de
-156 semanas es lo esperable, no un fallo. Un tercio de las réplicas tiene su mínimo por
-debajo del mínimo real, y tres cuartas partes, su máximo por encima del máximo real. Nada
-raro, como dice la nota del `plot_ppc`.
-
-Y es ajuste dentro de muestra, no predicción. No hay semanas guardadas para validar porque
-la charla va de explicar el ROI, no de adivinar la semana que viene.
 :::
 
 ## Los ingresos suben y bajan; la inversión, canal a canal, también {#series}
