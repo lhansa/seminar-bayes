@@ -1147,7 +1147,7 @@ si hace falta máquina.
 El `target_accept` es 0,95 y no el 0,9 del esqueleto: con 0,9 este modelo deja tres
 divergencias. Está medido, no supuesto.
 
-Y el punto de `mu` es la slide de `mu` cobrada: la posteriori está a casi tres
+Y la línea de `mu` es la slide de `mu` cobrada: la posteriori está a casi tres
 desviaciones típicas del centro de la priori que era correcta en el esqueleto. Aquella
 priori no era mala, era mala **para este otro modelo**.
 :::
