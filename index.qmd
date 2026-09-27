@@ -767,6 +767,70 @@ está bien que lo sea: el muestreo es impecable y el modelo, flojo. Las dos cosa
 que en medios vuelven.
 :::
 
+## Con el sentimiento de marca tenemos muchas dudas
+
+:::: {.columns}
+
+::: {.column width="60%"}
+```{python}
+#| label: graf-posteriori-sentimiento
+
+sentimiento_k = sentimiento_euros / 1e3
+# barras de 10 k€ con un borde en el cero, para que ninguna quede a medias entre los colores
+bordes = np.arange(np.floor(sentimiento_k.min() / 10) * 10, sentimiento_k.max() + 10, 10)
+
+fig, ax = plt.subplots(figsize=(6, 4.5))
+_, bordes, barras = ax.hist(sentimiento_k, bins=bordes, density=True,
+                            edgecolor="white", color="#BBBBBB", alpha=0.9)
+for barra, borde in zip(barras, bordes[:-1]):
+    if borde >= 0:
+        barra.set_facecolor(ACENTO)
+ax.axvline(0, color="black", linestyle="--", linewidth=1.5)
+ax.set_xlabel("Efecto en la facturación semanal (k€)\npor cada desviación típica del sentimiento")
+ax.set_ylabel("Densidad")
+ax.set_title(f"P(suma) = {100 * p_sentimiento_sube:.0f} %")
+plt.show()
+```
+
+:::
+
+::: {.column width="40%"}
+Entre `{python} euros(hdi_sentimiento[0])` y `{python} euros(hdi_sentimiento[1])` € a la semana, por cada desviación típica del sentimiento, con un 90 %.
+:::
+
+::::
+
+::: {.notes}
+El número del título es el área morada, contada: el mismo gesto que el `P(p > 0,5)` de la
+moneda. Señalarlo con el dedo.
+
+El sentimiento es el que merece la pausa. Con mínimos cuadrados sobre la misma ecuación
+sale con un p-valor de 0,21, «no significativo», y ahí se acaba la conversación. Aquí sale
+un `{python} f"{100 * p_sentimiento_sube:.0f}"` %. Cuidado con cómo se dice: no es que la
+bayesiana vea un efecto que el p-valor no ve. Son los mismos datos respondiendo a otra
+pregunta. El p-valor dice cómo de raros serían estos datos si el efecto fuera cero; la
+posteriori, qué me creo del efecto después de verlos. Es la vuelta al problema de la moneda,
+otra vez. Y el `{python} f"{100 * p_sentimiento_sube:.0f}"` % no autoriza a decir que el
+sentimiento funciona: el intervalo cruza el cero, y eso también va en la frase.
+
+Y los números cuadran, que es lo bonito: ese 0,21 es a dos colas; a una cola es 0,11, y la
+probabilidad de que el efecto reste es 1 − 0,89 = 0,11. Con prioris flojas y un modelo
+normal, las dos cifras son casi la misma, como en la moneda. La bayesiana no ha encontrado
+nada que el p-valor no viera: lo dice en otro idioma.
+
+Ten preparada la pregunta de vuelta, porque en esta sala alguien la hace: ¿y en el modelo
+completo? Ahí el sentimiento cambia de signo. Con los medios dentro, la probabilidad de que
+sume cae a un 2 %, y la competencia pasa de −0,41 a −0,75 desviaciones típicas. Es el sesgo
+por variable omitida de toda la vida, que conocen de mínimos cuadrados: el esqueleto no tiene
+medios, y lo que hacen los medios se lo reparten los controles. Esta slide es un ejercicio de
+cómo se lee una posteriori, no una conclusión sobre el sentimiento. Y deja otra lección: la
+posteriori depende del modelo, no solo de la priori.
+
+Y la frase que sostiene el resto de la charla: no me paso a bayesiana porque mínimos
+cuadrados falle aquí. Me paso porque el modelo del bloque siguiente —adstock, la priori
+sobre el ROI, `beta` deducida— no se puede escribir con mínimos cuadrados.
+:::
+
 ## Ahora metemos los medios (que es para lo que nos pagan)
 
 # El modelo de medios: ¿qué prioris necesitamos?
@@ -1466,9 +1530,6 @@ Orden esperado de las preguntas, de más a menos probable:
 11. **"¿Vale para mi TFM, para mi campo?"** Vale para cualquier sitio donde haya pocos
     datos y algo sabido de antes, que es la situación de un TFM entero. El bucle no cambia:
     lo que cambia es en qué unidades se escribe la priori. Enlazar con `el-lunes`.
-12. **"¿Y el sentimiento de marca? ¿No salía no significativo?"** Backup: `sentimiento`.
-    La posteriori con el área a la derecha del cero en morado; el p-valor contra el
-    `P(suma)` está en su nota.
 
 Para saltar a una slide de backup: `G`, el identificador y Enter.
 :::
@@ -1481,7 +1542,6 @@ Estas slides no están en el recorrido: se salta a ellas. Con la presentación e
 
 - `priori-plana` — "¿y una priori no informativa?"
 - `saturacion` — "¿y la saturación?"
-- `sentimiento` — "¿y el sentimiento de marca?", o el p-valor contra la posteriori
 - `el-lunes` — "¿por dónde empiezo?"
 - `series` — "¿qué pinta tienen los datos?"
 
@@ -1557,70 +1617,6 @@ recuperar en ventas lo invertido cae unos veinte puntos. Eso se mueve **sin que 
 hayan dicho nada**, porque quien lo mueve es un parámetro que no está identificado. Por eso
 la frase final de la charla se construye sobre `Channel2`, cuyo ROI aguanta las dos
 versiones.
-:::
-
-## Con el sentimiento de marca tenemos muchas dudas {#sentimiento}
-
-:::: {.columns}
-
-::: {.column width="60%"}
-```{python}
-#| label: graf-posteriori-sentimiento
-
-sentimiento_k = sentimiento_euros / 1e3
-# barras de 10 k€ con un borde en el cero, para que ninguna quede a medias entre los colores
-bordes = np.arange(np.floor(sentimiento_k.min() / 10) * 10, sentimiento_k.max() + 10, 10)
-
-fig, ax = plt.subplots(figsize=(6, 4.5))
-_, bordes, barras = ax.hist(sentimiento_k, bins=bordes, density=True,
-                            edgecolor="white", color="#BBBBBB", alpha=0.9)
-for barra, borde in zip(barras, bordes[:-1]):
-    if borde >= 0:
-        barra.set_facecolor(ACENTO)
-ax.axvline(0, color="black", linestyle="--", linewidth=1.5)
-ax.set_xlabel("Efecto en la facturación semanal (k€)\npor cada desviación típica del sentimiento")
-ax.set_ylabel("Densidad")
-ax.set_title(f"P(suma) = {100 * p_sentimiento_sube:.0f} %")
-plt.show()
-```
-
-:::
-
-::: {.column width="40%"}
-Entre `{python} euros(hdi_sentimiento[0])` y `{python} euros(hdi_sentimiento[1])` € a la semana, por cada desviación típica del sentimiento,con un 90%.
-:::
-
-::::
-
-::: {.notes}
-El número del título es el área morada, contada: el mismo gesto que el `P(p > 0,5)` de la
-moneda. Señalarlo con el dedo.
-
-El sentimiento es el que merece la pausa. Con mínimos cuadrados sobre la misma ecuación
-sale con un p-valor de 0,21, «no significativo», y ahí se acaba la conversación. Aquí sale
-un `{python} f"{100 * p_sentimiento_sube:.0f}"` %. Cuidado con cómo se dice: no es que la
-bayesiana vea un efecto que el p-valor no ve. Son los mismos datos respondiendo a otra
-pregunta. El p-valor dice cómo de raros serían estos datos si el efecto fuera cero; la
-posteriori, qué me creo del efecto después de verlos. Es la vuelta al problema de la moneda,
-otra vez. Y el `{python} f"{100 * p_sentimiento_sube:.0f}"` % no autoriza a decir que el
-sentimiento funciona: el intervalo cruza el cero, y eso también va en la frase.
-
-Y los números cuadran, que es lo bonito: ese 0,21 es a dos colas; a una cola es 0,11, y la
-probabilidad de que el efecto reste es 1 − 0,89 = 0,11. Con prioris flojas y un modelo
-normal, las dos cifras son casi la misma, como en la moneda. La bayesiana no ha encontrado
-nada que el p-valor no viera: lo dice en otro idioma.
-
-Ten preparada la pregunta de vuelta, porque en esta sala alguien la hace: ¿y en el modelo
-completo? Ahí el sentimiento cambia de signo. Con los medios dentro, la probabilidad de que
-sume cae a un 2 %, y la competencia pasa de −0,41 a −0,75 desviaciones típicas. Es el sesgo
-por variable omitida de toda la vida, que conocen de mínimos cuadrados: el esqueleto no tiene
-medios, y lo que hacen los medios se lo reparten los controles. Esta slide es un ejercicio de
-cómo se lee una posteriori, no una conclusión sobre el sentimiento. Y deja otra lección: la
-posteriori depende del modelo, no solo de la priori.
-
-Y la frase que sostiene el resto de la charla: no me paso a bayesiana porque mínimos
-cuadrados falle aquí. Me paso porque el modelo del bloque siguiente —adstock, la priori
-sobre el ROI, `beta` deducida— no se puede escribir con mínimos cuadrados.
 :::
 
 ## Los ingresos suben y bajan; la inversión, canal a canal, también {#series}
